@@ -11,10 +11,13 @@ This is a Python 3.x async-first library for building file-based chat storage sy
 ### Development
 - **Install dependencies**: `pip install -r requirements.txt`
 - **Run a specific file**: `python -m <module_name>` (e.g., `python -m benchmark`)
+- **Check code style**: No linting configuration exists yet. Consider adding flake8/black/ruff
 
 ### Testing
+- **Test file location**: `/home/markly2/claude_code/flatfile_chat_database_test`
 - **Run all tests**: `pytest` (no tests implemented yet)
 - **Run async tests**: `pytest -k "async"` (when tests are added)
+- **Run with coverage**: `pytest --cov=. --cov-report=html` (when tests are added)
 
 ### Common Development Tasks
 - **Add a new backend**: Create a new file in `backends/` inheriting from `backends.base.StorageBackend`
@@ -69,6 +72,8 @@ data/
 - **Session Management**: Sessions track panel associations and message counts
 - **Search Integration**: Full-text search uses inverted indices for performance
 - **Migration Path**: The system is designed to migrate from files to databases without API changes
+- **Error Handling**: All async operations should use proper try/except blocks with specific error types
+- **Resource Management**: Use async context managers for file operations to ensure proper cleanup
 
 ## Configuration
 
@@ -84,9 +89,18 @@ config = StorageConfig.from_file("storage_config.json")
 config = StorageConfig.from_env()
 ```
 
+## Code Style Guidelines
+
+- Use async/await for all I/O operations
+- Type hint all function parameters and return values
+- Use dataclasses for all data structures
+- Follow PEP 8 naming conventions
+- Prefer pathlib over os.path for file operations
+
 ## Future Development Notes
 
 1. Tests need to be implemented using pytest-asyncio
 2. Database backends (PostgreSQL, SQLite) are planned but not implemented
 3. The compression module exists but may need completion
 4. API documentation needs to be generated from docstrings
+5. Consider adding pre-commit hooks for code quality

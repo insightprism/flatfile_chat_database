@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Any, AsyncIterator
 import aiofiles
 
 from ..config import StorageConfig
-from .file_ops import atomic_write, safe_read
+from .file_ops import atomic_write, atomic_append, safe_read
 
 
 class JSONError(Exception):
@@ -61,7 +61,7 @@ async def read_json(
     default: Optional[Dict[str, Any]] = None
 ) -> Optional[Dict[str, Any]]:
     """
-    Read JSON file safely.
+    Read JSON file safely with file locking.
     
     Args:
         path: JSON file path
@@ -71,8 +71,8 @@ async def read_json(
     Returns:
         Parsed dictionary or default value
     """
-    # Read file content
-    content = await safe_read(path, mode='r')
+    # Read file content with shared lock
+    content = await safe_read(path, mode='r', config=config)
     if content is None:
         return default
     
@@ -97,10 +97,11 @@ async def append_jsonl(
     config: StorageConfig
 ) -> bool:
     """
-    Append entry to JSONL file.
+    Append entry to JSONL file with file locking.
     
     JSONL format has one JSON object per line, which is perfect for
-    append-only operations like message history.
+    append-only operations like message history. Now uses atomic append
+    to prevent concurrent write corruption.
     
     Args:
         path: JSONL file path
@@ -111,19 +112,11 @@ async def append_jsonl(
         True if successful
     """
     try:
-        # Ensure parent directory exists
-        if config.create_parent_directories:
-            path.parent.mkdir(parents=True, exist_ok=True)
-        
         # Serialize entry
         json_line = json.dumps(entry, ensure_ascii=False) + '\n'
         
-        # Append to file
-        async with aiofiles.open(path, mode='a', encoding='utf-8') as f:
-            await f.write(json_line)
-            await f.flush()
-            
-        return True
+        # Use atomic append with locking
+        return await atomic_append(path, json_line, config)
         
     except Exception as e:
         print(f"Failed to append to JSONL {path}: {e}")

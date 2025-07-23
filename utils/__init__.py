@@ -4,13 +4,15 @@ Utility functions for file operations, JSON handling, and path management.
 
 from .file_ops import (
     atomic_write,
+    atomic_append,
     safe_read,
     ensure_directory,
     safe_delete,
     file_exists,
     directory_exists,
     list_files,
-    get_file_size
+    get_file_size,
+    get_file_operation_manager
 )
 
 from .json_utils import (
@@ -34,12 +36,19 @@ from .path_utils import (
     generate_context_snapshot_id,
     sanitize_filename,
     build_file_paths,
-    build_panel_file_paths
+    build_panel_file_paths,
+    # New centralized key functions
+    get_user_key,
+    get_session_key,
+    get_profile_key,
+    get_messages_key,
+    get_session_metadata_key
 )
 
 __all__ = [
     # file_ops
     "atomic_write",
+    "atomic_append",
     "safe_read",
     "ensure_directory",
     "safe_delete",
@@ -47,6 +56,7 @@ __all__ = [
     "directory_exists",
     "list_files",
     "get_file_size",
+    "get_file_operation_manager",
     # json_utils
     "write_json",
     "read_json",
@@ -66,5 +76,11 @@ __all__ = [
     "generate_context_snapshot_id",
     "sanitize_filename",
     "build_file_paths",
-    "build_panel_file_paths"
+    "build_panel_file_paths",
+    # New centralized key functions
+    "get_user_key",
+    "get_session_key",
+    "get_profile_key",
+    "get_messages_key",
+    "get_session_metadata_key"
 ]

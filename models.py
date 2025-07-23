@@ -107,6 +107,7 @@ class Panel:
     message_count: int = 0
     config: Dict[str, Any] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
+    max_personas: int = 10  # Can be overridden from config
     
     def __post_init__(self):
         """Validate panel after initialization"""
@@ -114,12 +115,14 @@ class Panel:
             raise ValueError("Panel ID cannot be empty")
         if not self.personas:
             raise ValueError("Panel must have at least one persona")
-        if len(self.personas) > 10:  # This should come from config
-            raise ValueError("Panel cannot have more than 10 personas")
+        if len(self.personas) > self.max_personas:
+            raise ValueError(f"Panel cannot have more than {self.max_personas} personas")
     
     def add_persona(self, persona_id: str) -> None:
         """Add a persona to the panel"""
         if persona_id not in self.personas:
+            if len(self.personas) >= self.max_personas:
+                raise ValueError(f"Panel cannot have more than {self.max_personas} personas")
             self.personas.append(persona_id)
             self.updated_at = current_timestamp()
             
@@ -131,7 +134,10 @@ class Panel:
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for storage"""
-        return asdict(self)
+        data = asdict(self)
+        # Don't store config-related fields
+        data.pop('max_personas', None)
+        return data
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Panel':
@@ -149,6 +155,7 @@ class SituationalContext:
     confidence: float = 0.0
     message_range: Optional[Dict[str, Any]] = None  # start/end message IDs
     metadata: Dict[str, Any] = field(default_factory=dict)
+    max_key_points: int = 10  # Can be overridden from config
     
     def __post_init__(self):
         """Validate context after initialization"""
@@ -156,12 +163,15 @@ class SituationalContext:
             raise ValueError("Context summary cannot be empty")
         if self.confidence < 0 or self.confidence > 1:
             raise ValueError("Confidence must be between 0 and 1")
-        if len(self.key_points) > 10:  # This should come from config
-            raise ValueError("Too many key points (max 10)")
+        if len(self.key_points) > self.max_key_points:
+            raise ValueError(f"Too many key points (max {self.max_key_points})")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for storage"""
-        return asdict(self)
+        data = asdict(self)
+        # Don't store config-related fields
+        data.pop('max_key_points', None)
+        return data
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'SituationalContext':

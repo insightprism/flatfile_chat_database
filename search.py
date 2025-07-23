@@ -15,7 +15,7 @@ from collections import defaultdict, Counter
 
 from .config import StorageConfig
 from .models import Message, Session, Document, SituationalContext
-from .utils import read_json, read_jsonl
+from .utils import read_json, read_jsonl, get_user_path
 
 
 @dataclass
@@ -217,7 +217,7 @@ class AdvancedSearchEngine:
         }
         
         # Get all sessions for user
-        user_path = self.base_path / user_id
+        user_path = get_user_path(self.base_path, user_id, self.config)
         if not user_path.exists():
             return index
         
@@ -262,7 +262,7 @@ class AdvancedSearchEngine:
         """Search within a specific user's data"""
         results = []
         
-        user_path = self.base_path / user_id
+        user_path = get_user_path(self.base_path, user_id, self.config)
         if not user_path.exists():
             return results
         
@@ -282,11 +282,12 @@ class AdvancedSearchEngine:
     async def _get_user_sessions(self, user_id: str) -> List[str]:
         """Get all session IDs for a user"""
         sessions = []
-        user_path = self.base_path / user_id
+        user_path = get_user_path(self.base_path, user_id, self.config)
         
-        for path in user_path.iterdir():
-            if path.is_dir() and path.name.startswith(self.config.session_id_prefix):
-                sessions.append(path.name)
+        if user_path.exists():
+            for path in user_path.iterdir():
+                if path.is_dir() and path.name.startswith(self.config.session_id_prefix):
+                    sessions.append(path.name)
         
         return sessions
     

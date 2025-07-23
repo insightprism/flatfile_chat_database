@@ -21,7 +21,10 @@ from .utils import (
     get_user_path, get_session_path, get_panel_path, get_global_personas_path,
     get_user_personas_path, get_documents_path, get_context_history_path,
     generate_session_id, generate_panel_id, generate_context_snapshot_id,
-    sanitize_filename, build_file_paths, build_panel_file_paths
+    sanitize_filename, build_file_paths, build_panel_file_paths,
+    # New centralized key functions
+    get_user_key, get_session_key, get_profile_key, get_messages_key,
+    get_session_metadata_key
 )
 from .search import AdvancedSearchEngine, SearchQuery, SearchResult
 
@@ -82,12 +85,9 @@ class StorageManager:
         if not self._initialized:
             await self.initialize()
         
-        # Sanitize user ID
-        safe_user_id = sanitize_filename(user_id)
-        user_path = get_user_path(self.base_path, safe_user_id)
-        
         # Check if user already exists
-        if await self.backend.exists(str(user_path.relative_to(self.base_path))):
+        user_key = get_user_key(self.base_path, user_id, self.config)
+        if await self.backend.exists(user_key):
             print(f"User {user_id} already exists")
             return False
         
@@ -100,7 +100,7 @@ class StorageManager:
         )
         
         # Save profile
-        profile_key = str((user_path / self.config.user_profile_filename).relative_to(self.base_path))
+        profile_key = get_profile_key(self.base_path, user_id, self.config)
         profile_data = user_profile.to_dict()
         
         return await self._write_json(profile_key, profile_data)
@@ -115,10 +115,7 @@ class StorageManager:
         Returns:
             User profile data or None
         """
-        safe_user_id = sanitize_filename(user_id)
-        user_path = get_user_path(self.base_path, safe_user_id)
-        profile_key = str((user_path / self.config.user_profile_filename).relative_to(self.base_path))
-        
+        profile_key = get_profile_key(self.base_path, user_id, self.config)
         return await self._read_json(profile_key)
     
     async def update_user_profile(self, user_id: str, updates: Dict[str, Any]) -> bool:
@@ -151,10 +148,7 @@ class StorageManager:
         profile.updated_at = datetime.now().isoformat()
         
         # Save updated profile
-        safe_user_id = sanitize_filename(user_id)
-        user_path = get_user_path(self.base_path, safe_user_id)
-        profile_key = str((user_path / self.config.user_profile_filename).relative_to(self.base_path))
-        
+        profile_key = get_profile_key(self.base_path, user_id, self.config)
         return await self._write_json(profile_key, profile.to_dict())
     
     async def user_exists(self, user_id: str) -> bool:
@@ -167,10 +161,7 @@ class StorageManager:
         Returns:
             True if user exists
         """
-        safe_user_id = sanitize_filename(user_id)
-        user_path = get_user_path(self.base_path, safe_user_id)
-        user_key = str(user_path.relative_to(self.base_path))
-        
+        user_key = get_user_key(self.base_path, user_id, self.config)
         return await self.backend.exists(user_key)
     
     async def list_users(self) -> List[str]:
@@ -180,23 +171,19 @@ class StorageManager:
         Returns:
             List of user IDs
         """
-        # List all directories at base level
-        keys = await self.backend.list_keys("", pattern="*/")
+        # List all directories in the user data directory
+        user_data_dir = self.config.user_data_directory_name
+        pattern = f"{user_data_dir}/*/"
+        keys = await self.backend.list_keys("", pattern=pattern)
         
         users = []
         for key in keys:
-            # Skip system directories
-            if key.startswith(self.config.panel_sessions_directory_name):
-                continue
-            if key.startswith(self.config.global_personas_directory_name):
-                continue
-            if key.startswith(self.config.system_config_directory_name):
-                continue
-            
-            # Extract user ID from path
-            user_id = key.rstrip('/').split('/')[0]
-            if user_id:
-                users.append(user_id)
+            # Extract user ID from path: "users/user_id/"
+            parts = key.rstrip('/').split('/')
+            if len(parts) >= 2:
+                user_id = parts[1]  # Second part is the user ID
+                if user_id:
+                    users.append(user_id)
         
         return sorted(list(set(users)))
     
@@ -227,15 +214,8 @@ class StorageManager:
             title=title or "New Chat"
         )
         
-        # Get session path
-        safe_user_id = sanitize_filename(user_id)
-        session_path = get_session_path(self.base_path, safe_user_id, session_id)
-        
-        # Build file paths
-        paths = build_file_paths(session_path, self.config)
-        
         # Save session metadata
-        session_key = str(paths["session_metadata"].relative_to(self.base_path))
+        session_key = get_session_metadata_key(self.base_path, user_id, session_id, self.config)
         
         if await self._write_json(session_key, session.to_dict()):
             return session_id
@@ -253,11 +233,7 @@ class StorageManager:
         Returns:
             Session object or None
         """
-        safe_user_id = sanitize_filename(user_id)
-        session_path = get_session_path(self.base_path, safe_user_id, session_id)
-        paths = build_file_paths(session_path, self.config)
-        
-        session_key = str(paths["session_metadata"].relative_to(self.base_path))
+        session_key = get_session_metadata_key(self.base_path, user_id, session_id, self.config)
         session_data = await self._read_json(session_key)
         
         if session_data:
@@ -288,8 +264,12 @@ class StorageManager:
             session.title = updates["title"]
         if "metadata" in updates:
             session.metadata.update(updates["metadata"])
-        
-        session.update_timestamp()
+        if "message_count" in updates:
+            session.message_count = updates["message_count"]
+        if "updated_at" in updates:
+            session.updated_at = updates["updated_at"]
+        else:
+            session.update_timestamp()
         
         # Save updated session
         safe_user_id = sanitize_filename(user_id)
@@ -313,12 +293,11 @@ class StorageManager:
         Returns:
             List of Session objects
         """
-        safe_user_id = sanitize_filename(user_id)
-        user_path = get_user_path(self.base_path, safe_user_id)
-        user_key = str(user_path.relative_to(self.base_path))
+        user_key = get_user_key(self.base_path, user_id, self.config)
         
         # List all session directories
-        pattern = f"*/{self.config.session_metadata_filename}"
+        # Use just the filename for recursive search
+        pattern = self.config.session_metadata_filename
         session_keys = await self.backend.list_keys(user_key, pattern=pattern)
         
         # Sort by session ID (which includes timestamp)
@@ -377,11 +356,7 @@ class StorageManager:
             return False
         
         # Get messages file path
-        safe_user_id = sanitize_filename(user_id)
-        session_path = get_session_path(self.base_path, safe_user_id, session_id)
-        paths = build_file_paths(session_path, self.config)
-        
-        messages_key = str(paths["messages"].relative_to(self.base_path))
+        messages_key = get_messages_key(self.base_path, user_id, session_id, self.config)
         
         # Append message
         success = await self._append_jsonl(messages_key, message_json)
@@ -413,11 +388,7 @@ class StorageManager:
         Returns:
             List of Message objects
         """
-        safe_user_id = sanitize_filename(user_id)
-        session_path = get_session_path(self.base_path, safe_user_id, session_id)
-        paths = build_file_paths(session_path, self.config)
-        
-        messages_key = str(paths["messages"].relative_to(self.base_path))
+        messages_key = get_messages_key(self.base_path, user_id, session_id, self.config)
         messages_path = self.base_path / messages_key
         
         # Read messages with pagination
@@ -862,7 +833,8 @@ class StorageManager:
             id=panel_id,
             type=panel_type,
             personas=personas,
-            config=config or {}
+            config=config or {},
+            max_personas=self.config.persona_limit
         )
         
         # Get panel path

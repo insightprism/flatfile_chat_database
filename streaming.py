@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 from .config import StorageConfig
 from .models import Message, Session, Document
-from .utils import read_jsonl_paginated
+from .utils import read_jsonl_paginated, get_user_path
 
 
 @dataclass
@@ -342,7 +342,7 @@ class ExportStreamer:
         Yields:
             Export data chunks
         """
-        user_path = self.base_path / user_id
+        user_path = get_user_path(self.base_path, user_id, self.config)
         
         # Yield user profile
         profile_path = user_path / self.config.user_profile_filename

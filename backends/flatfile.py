@@ -5,7 +5,6 @@ This backend stores data as files on the local filesystem, implementing
 the StorageBackend interface.
 """
 
-import os
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 import asyncio
@@ -14,7 +13,7 @@ from datetime import datetime
 from .base import StorageBackend
 from ..config import StorageConfig
 from ..utils import (
-    atomic_write, safe_read, ensure_directory, safe_delete,
+    atomic_write, atomic_append, safe_read, ensure_directory, safe_delete,
     file_exists, directory_exists, list_files, get_file_size
 )
 
@@ -64,7 +63,7 @@ class FlatfileBackend(StorageBackend):
     
     async def read(self, key: str) -> Optional[bytes]:
         """
-        Read data by key (file path).
+        Read data by key (file path) with file locking.
         
         Args:
             key: Storage key (relative path from base)
@@ -73,7 +72,7 @@ class FlatfileBackend(StorageBackend):
             Data as bytes or None if not found
         """
         path = self._get_absolute_path(key)
-        return await safe_read(path, mode='rb')
+        return await safe_read(path, mode='rb', config=self.config)
     
     async def write(self, key: str, data: bytes) -> bool:
         """
@@ -91,7 +90,7 @@ class FlatfileBackend(StorageBackend):
     
     async def append(self, key: str, data: bytes) -> bool:
         """
-        Append data to existing key (file).
+        Append data to existing key (file) with file locking.
         
         Args:
             key: Storage key (relative path from base)
@@ -102,20 +101,8 @@ class FlatfileBackend(StorageBackend):
         """
         path = self._get_absolute_path(key)
         
-        try:
-            # Ensure parent directory exists
-            if self.config.create_parent_directories:
-                path.parent.mkdir(parents=True, exist_ok=True)
-            
-            # Append to file
-            with open(path, 'ab') as f:
-                f.write(data)
-            
-            return True
-            
-        except Exception as e:
-            print(f"Failed to append to {key}: {e}")
-            return False
+        # Use atomic append with locking
+        return await atomic_append(path, data, self.config)
     
     async def delete(self, key: str) -> bool:
         """
@@ -315,7 +302,7 @@ class FlatfileBackend(StorageBackend):
             Absolute path
         """
         # Ensure key doesn't escape base directory
-        clean_key = os.path.normpath(key)
+        clean_key = str(Path(key))
         if clean_key.startswith('..'):
             raise ValueError(f"Invalid key: {key}")
         

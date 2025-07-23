@@ -71,6 +71,9 @@ class StorageConfig:
     panel_insights_directory_name: str = "insights"
     panel_personas_directory_name: str = "personas"
     
+    # Persona limits
+    persona_limit: int = 10  # Maximum number of personas allowed
+    
     # Document handling
     allowed_document_extensions: List[str] = field(default_factory=lambda: [
         ".pdf", ".txt", ".md", ".json", ".csv", 
@@ -85,6 +88,12 @@ class StorageConfig:
     context_key_points_max_count: int = 10
     context_confidence_threshold: float = 0.7
     
+    # File locking configuration
+    enable_file_locking: bool = True
+    lock_timeout_seconds: float = 30.0
+    lock_retry_delay_ms: int = 10
+    lock_strategy: str = "file"  # "file" or "database" for future
+    
     def validate(self) -> None:
         """Validate configuration values"""
         if self.max_message_size_bytes <= 0:
@@ -97,6 +106,12 @@ class StorageConfig:
             raise ValueError("storage_base_path cannot be empty")
         if self.context_confidence_threshold < 0 or self.context_confidence_threshold > 1:
             raise ValueError("context_confidence_threshold must be between 0 and 1")
+        if self.lock_timeout_seconds <= 0:
+            raise ValueError("lock_timeout_seconds must be positive")
+        if self.lock_retry_delay_ms <= 0:
+            raise ValueError("lock_retry_delay_ms must be positive")
+        if self.lock_strategy not in ["file", "database"]:
+            raise ValueError("lock_strategy must be 'file' or 'database'")
 
 
 @dataclass

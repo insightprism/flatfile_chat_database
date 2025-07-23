@@ -41,6 +41,8 @@
   "panel_insight_retention_days": 90,
   "panel_message_threading_enabled": true,
   
+  "persona_limit": 10,
+  
   "allowed_document_extensions": [
     ".pdf", ".txt", ".md", ".json", ".csv", 
     ".png", ".jpg", ".jpeg", ".gif", ".webp"

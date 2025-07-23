@@ -5,10 +5,11 @@ Provides consistent path construction and naming conventions based on
 the configuration.
 """
 
+import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 import unicodedata
 
 from ..config import StorageConfig
@@ -59,10 +60,12 @@ def generate_session_id(config: StorageConfig) -> str:
         config: Storage configuration
         
     Returns:
-        Session ID like "chat_session_20240722_143022"
+        Session ID like "chat_session_20240722_143022_123456"
     """
     timestamp = datetime.now().strftime(config.session_timestamp_format)
-    return f"{config.session_id_prefix}_{timestamp}"
+    # Add microseconds to ensure uniqueness
+    microseconds = datetime.now().strftime("%f")[:6]
+    return f"{config.session_id_prefix}_{timestamp}_{microseconds}"
 
 
 def generate_panel_id(config: StorageConfig) -> str:
@@ -73,10 +76,12 @@ def generate_panel_id(config: StorageConfig) -> str:
         config: Storage configuration
         
     Returns:
-        Panel ID like "panel_20240722_143022"
+        Panel ID like "panel_20240722_143022_123456"
     """
     timestamp = datetime.now().strftime(config.session_timestamp_format)
-    return f"{config.panel_id_prefix}_{timestamp}"
+    # Add microseconds to ensure uniqueness
+    microseconds = datetime.now().strftime("%f")[:6]
+    return f"{config.panel_id_prefix}_{timestamp}_{microseconds}"
 
 
 def generate_context_snapshot_id(config: StorageConfig) -> str:
@@ -87,10 +92,12 @@ def generate_context_snapshot_id(config: StorageConfig) -> str:
         config: Storage configuration
         
     Returns:
-        Snapshot ID like "context_20240722_143022"
+        Snapshot ID like "context_20240722_143022_123456"
     """
     timestamp = datetime.now().strftime(config.context_snapshot_timestamp_format)
-    return f"context_{timestamp}"
+    # Add microseconds to ensure uniqueness
+    microseconds = datetime.now().strftime("%f")[:6]
+    return f"context_{timestamp}_{microseconds}"
 
 
 def get_base_path(config: StorageConfig) -> Path:
@@ -106,23 +113,27 @@ def get_base_path(config: StorageConfig) -> Path:
     return Path(config.storage_base_path).resolve()
 
 
-def get_user_path(base_path: Path, user_id: str) -> Path:
+def get_user_path(base_path: Path, user_id: str, config: Optional['StorageConfig'] = None) -> Path:
     """
     Get user directory path.
     
     Args:
         base_path: Base storage path
         user_id: User identifier
+        config: Storage configuration (if None, uses 'users' as default)
         
     Returns:
         User directory path
     """
     # Sanitize user_id for filesystem
     safe_user_id = sanitize_filename(user_id)
-    return base_path / safe_user_id
+    if config:
+        return base_path / config.user_data_directory_name / safe_user_id
+    # Default for backward compatibility
+    return base_path / "users" / safe_user_id
 
 
-def get_session_path(base_path: Path, user_id: str, session_id: str) -> Path:
+def get_session_path(base_path: Path, user_id: str, session_id: str, config: Optional['StorageConfig'] = None) -> Path:
     """
     Get session directory path.
     
@@ -130,11 +141,12 @@ def get_session_path(base_path: Path, user_id: str, session_id: str) -> Path:
         base_path: Base storage path
         user_id: User identifier
         session_id: Session identifier
+        config: Storage configuration (optional)
         
     Returns:
         Session directory path
     """
-    user_path = get_user_path(base_path, user_id)
+    user_path = get_user_path(base_path, user_id, config)
     return user_path / session_id
 
 
@@ -179,7 +191,7 @@ def get_user_personas_path(base_path: Path, user_id: str, config: StorageConfig)
     Returns:
         User personas directory path
     """
-    user_path = get_user_path(base_path, user_id)
+    user_path = get_user_path(base_path, user_id, config)
     return user_path / config.panel_personas_directory_name
 
 
@@ -317,5 +329,91 @@ def is_valid_panel_id(panel_id: str, config: StorageConfig) -> bool:
     return bool(re.match(pattern, panel_id))
 
 
-# Add missing import
-import os
+# Centralized key generation functions for backend storage
+
+def get_user_key(base_path: Path, user_id: str, config: StorageConfig) -> str:
+    """
+    Get backend storage key for user directory.
+    
+    Args:
+        base_path: Base storage path
+        user_id: User identifier
+        config: Storage configuration
+        
+    Returns:
+        Backend key string
+    """
+    user_path = base_path / config.user_data_directory_name / sanitize_filename(user_id)
+    return str(user_path.relative_to(base_path))
+
+
+def get_session_key(base_path: Path, user_id: str, session_id: str, config: StorageConfig) -> str:
+    """
+    Get backend storage key for session.
+    
+    Args:
+        base_path: Base storage path
+        user_id: User identifier
+        session_id: Session identifier
+        config: Storage configuration
+        
+    Returns:
+        Backend key string
+    """
+    session_path = get_session_path(base_path, user_id, session_id, config)
+    return str(session_path.relative_to(base_path))
+
+
+def get_profile_key(base_path: Path, user_id: str, config: StorageConfig) -> str:
+    """
+    Get backend storage key for user profile.
+    
+    Args:
+        base_path: Base storage path
+        user_id: User identifier
+        config: Storage configuration
+        
+    Returns:
+        Backend key string
+    """
+    user_path = base_path / config.user_data_directory_name / sanitize_filename(user_id)
+    profile_path = user_path / config.user_profile_filename
+    return str(profile_path.relative_to(base_path))
+
+
+def get_messages_key(base_path: Path, user_id: str, session_id: str, config: StorageConfig) -> str:
+    """
+    Get backend storage key for session messages.
+    
+    Args:
+        base_path: Base storage path
+        user_id: User identifier
+        session_id: Session identifier
+        config: Storage configuration
+        
+    Returns:
+        Backend key string
+    """
+    session_path = get_session_path(base_path, user_id, session_id, config)
+    messages_path = session_path / config.messages_filename
+    return str(messages_path.relative_to(base_path))
+
+
+def get_session_metadata_key(base_path: Path, user_id: str, session_id: str, config: StorageConfig) -> str:
+    """
+    Get backend storage key for session metadata.
+    
+    Args:
+        base_path: Base storage path
+        user_id: User identifier
+        session_id: Session identifier
+        config: Storage configuration
+        
+    Returns:
+        Backend key string
+    """
+    session_path = get_session_path(base_path, user_id, session_id, config)
+    metadata_path = session_path / config.session_metadata_filename
+    return str(metadata_path.relative_to(base_path))
+
+
