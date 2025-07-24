@@ -13,9 +13,9 @@ from dataclasses import dataclass, field
 import re
 from collections import defaultdict, Counter
 
-from .config import StorageConfig
-from .models import Message, Session, Document, SituationalContext
-from .utils import read_json, read_jsonl, get_user_path
+from flatfile_chat_database.config import StorageConfig
+from flatfile_chat_database.models import Message, Session, Document, SituationalContext, SearchType
+from flatfile_chat_database.utils import read_json, read_jsonl, get_user_path
 
 
 @dataclass
@@ -32,6 +32,14 @@ class SearchQuery:
     include_context: bool = False
     max_results: int = 100
     min_relevance_score: float = 0.0
+    
+    # Vector search parameters
+    use_vector_search: bool = False
+    similarity_threshold: float = 0.7
+    embedding_provider: str = "nomic-ai"
+    chunking_strategy: str = "optimized_summary"
+    hybrid_search: bool = False
+    vector_weight: float = 0.5
 
 
 @dataclass
@@ -347,7 +355,7 @@ class AdvancedSearchEngine:
                 
                 if score > 0 or not query.query:  # Include all if no text query
                     result = SearchResult(
-                        id=msg.id,
+                        id=msg.message_id,
                         type="message",
                         content=msg.content,
                         session_id=session_id,
@@ -648,3 +656,65 @@ class AdvancedSearchEngine:
         words = re.findall(r'\b\w+\b', text.lower())
         # Filter out very short words
         return [w for w in words if len(w) > 2]
+    
+    async def vector_search(self, query: SearchQuery) -> List[SearchResult]:
+        """
+        Execute vector-based semantic search.
+        
+        Args:
+            query: Search query with vector parameters
+            
+        Returns:
+            List of search results based on semantic similarity
+        """
+        if not query.use_vector_search:
+            return []
+        
+        # Import StorageManager here to avoid circular imports
+        from .storage import StorageManager
+        
+        # Use StorageManager for vector search
+        storage = StorageManager(self.config)
+        
+        results = await storage.vector_search(
+            user_id=query.user_id,
+            query=query.query,
+            session_ids=query.session_ids,
+            top_k=query.max_results,
+            threshold=query.similarity_threshold,
+            embedding_provider=query.embedding_provider
+        )
+        
+        return results
+    
+    async def search_enhanced(self, query: SearchQuery) -> List[SearchResult]:
+        """
+        Enhanced search with vector support.
+        
+        This method routes to the appropriate search implementation based on
+        query parameters (text, vector, or hybrid).
+        
+        Args:
+            query: Search query with parameters
+            
+        Returns:
+            List of search results
+        """
+        if query.hybrid_search:
+            # Use hybrid search from StorageManager
+            from .storage import StorageManager
+            storage = StorageManager(self.config)
+            
+            return await storage.hybrid_search(
+                user_id=query.user_id,
+                query=query.query,
+                session_ids=query.session_ids,
+                top_k=query.max_results,
+                vector_weight=query.vector_weight
+            )
+        elif query.use_vector_search:
+            # Use pure vector search
+            return await self.vector_search(query)
+        else:
+            # Use traditional text search
+            return await self.search(query)

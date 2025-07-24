@@ -1,0 +1,84 @@
+{
+  "flatfile_config": {
+    "storage_base_path": "./test_data",
+    "default_chunking_strategy": "fixed",
+    "default_embedding_provider": "nomic-ai"
+  },
+  "document_processing": {
+    "default_processing_chain": [
+      "pm_injest_engine",
+      "pm_chunking_engine",
+      "pm_embedding_engine",
+      "ff_storage_engine"
+    ],
+    "environment_configs": {
+      "test": {
+        "enable_tracing": true,
+        "log_level": "DEBUG",
+        "timeout_seconds": 30,
+        "max_retries": 1
+      }
+    },
+    "skip_nlp_for_file_types": [
+      "image/jpeg",
+      "image/png",
+      "image/bmp",
+      "text/plain",
+      "text/markdown"
+    ],
+    "max_concurrent_documents": 1
+  },
+  "engine_selection": {
+    "file_type_handlers": {
+      "text/plain": "pm_prism_text_handler_async",
+      "application/pdf": "pm_prism_pdf_handler_async"
+    }
+  },
+  "handler_strategies": {
+    "default_strategies": {
+      "nlp_strategy": "basic",
+      "chunking_strategy": "fixed",
+      "embedding_provider": "nomic-ai"
+    },
+    "strategy_parameters": {
+      "chunking": {
+        "fixed": {
+          "chunk_size": 256,
+          "chunk_overlap": 32
+        }
+      },
+      "embedding": {
+        "nomic-ai": {
+          "batch_size": 8
+        }
+      }
+    }
+  },
+  "integration_settings": {
+    "storage_integration": {
+      "auto_store_vectors": true,
+      "cleanup_temp_files": true,
+      "compress_vectors": false
+    },
+    "performance_settings": {
+      "concurrent_documents": 1,
+      "vector_batch_size": 10,
+      "memory_limit_mb": 256,
+      "timeout_per_document_seconds": 60,
+      "enable_caching": false
+    },
+    "error_handling": {
+      "retry_attempts": 1,
+      "continue_on_error": false,
+      "log_errors": true,
+      "raise_on_critical_error": true
+    },
+    "monitoring": {
+      "enable_metrics": false,
+      "enable_tracing": true,
+      "trace_sampling_rate": 1.0,
+      "log_performance": true
+    }
+  },
+  "environment": "test"
+}

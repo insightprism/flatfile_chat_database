@@ -11,9 +11,9 @@ from typing import AsyncIterator, Dict, List, Optional, Any, Tuple
 import json
 from dataclasses import dataclass
 
-from .config import StorageConfig
-from .models import Message, Session, Document
-from .utils import read_jsonl_paginated, get_user_path
+from flatfile_chat_database.config import StorageConfig
+from flatfile_chat_database.models import Message, Session, Document
+from flatfile_chat_database.utils import read_jsonl_paginated, get_user_path
 
 
 @dataclass

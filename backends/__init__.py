@@ -2,7 +2,7 @@
 Storage backend implementations.
 """
 
-from .base import StorageBackend
-from .flatfile import FlatfileBackend
+from flatfile_chat_database.backends.base import StorageBackend
+from flatfile_chat_database.backends.flatfile import FlatfileBackend
 
 __all__ = ["StorageBackend", "FlatfileBackend"]

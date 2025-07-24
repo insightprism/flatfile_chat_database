@@ -1,0 +1,11 @@
+
+    Renewable energy sources like solar, wind, and hydroelectric power are 
+    becoming increasingly important in the fight against climate change. 
+    Solar panels convert sunlight directly into electricity using photovoltaic cells.
+    Wind turbines harness kinetic energy from moving air to generate power.
+    Hydroelectric dams use the force of flowing water to turn turbines.
+    
+    The transition to renewable energy requires significant infrastructure 
+    investment but offers long-term benefits including reduced carbon emissions,
+    energy independence, and sustainable economic growth.
+    

@@ -1,0 +1,22 @@
+{
+  "confidence": 0.9,
+  "entities": {
+    "skill_level": [
+      "beginner"
+    ],
+    "topics": [
+      "Python",
+      "lists",
+      "data structures"
+    ]
+  },
+  "key_points": [
+    "New to Python",
+    "Learning about lists",
+    "Prefers code examples"
+  ],
+  "message_range": null,
+  "metadata": {},
+  "summary": "Alice is learning Python list operations",
+  "timestamp": "2025-07-22T15:37:49.802567"
+}

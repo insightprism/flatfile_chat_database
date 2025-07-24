@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Optional
 import unicodedata
 
-from ..config import StorageConfig
+from flatfile_chat_database.config import StorageConfig
 
 
 def sanitize_filename(filename: str, max_length: int = 255) -> str:

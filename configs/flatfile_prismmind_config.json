@@ -1,0 +1,264 @@
+{
+  "flatfile_config": {
+    "storage_base_path": "./data",
+    "default_chunking_strategy": "optimized_summary",
+    "default_embedding_provider": "nomic-ai",
+    "user_data_directory_name": "users",
+    "session_data_directory_name": "sessions",
+    "global_personas_directory_name": "personas",
+    "panel_sessions_directory_name": "panels",
+    "system_config_directory_name": "system",
+    "vector_storage_subdirectory": "vectors",
+    "embeddings_filename": "embeddings.npy",
+    "vector_index_filename": "vector_index.jsonl",
+    "create_parent_directories": true,
+    "backup_before_delete": true,
+    "enable_compression": false,
+    "enable_versioning": false,
+    "max_file_locks_retries": 3,
+    "file_lock_timeout_seconds": 30
+  },
+  "document_processing": {
+    "default_processing_chain": [
+      "pm_injest_engine",
+      "pm_nlp_engine",
+      "pm_chunking_engine",
+      "pm_embedding_engine",
+      "ff_storage_engine"
+    ],
+    "file_type_chains": {
+      "application/pdf": [
+        "pm_injest_engine",
+        "pm_nlp_engine",
+        "pm_chunking_engine",
+        "pm_embedding_engine",
+        "ff_storage_engine"
+      ],
+      "image/jpeg": [
+        "pm_injest_engine",
+        "pm_embedding_engine",
+        "ff_storage_engine"
+      ],
+      "image/png": [
+        "pm_injest_engine",
+        "pm_embedding_engine",
+        "ff_storage_engine"
+      ],
+      "text/plain": [
+        "pm_injest_engine",
+        "pm_chunking_engine",
+        "pm_embedding_engine",
+        "ff_storage_engine"
+      ],
+      "text/markdown": [
+        "pm_injest_engine",
+        "pm_chunking_engine",
+        "pm_embedding_engine",
+        "ff_storage_engine"
+      ],
+      "url": [
+        "pm_injest_engine",
+        "pm_nlp_engine",
+        "pm_chunking_engine",
+        "pm_embedding_engine",
+        "ff_storage_engine"
+      ]
+    },
+    "environment_configs": {
+      "development": {
+        "enable_tracing": true,
+        "log_level": "DEBUG",
+        "timeout_seconds": 60,
+        "max_retries": 1
+      },
+      "staging": {
+        "enable_tracing": true,
+        "log_level": "INFO",
+        "timeout_seconds": 45,
+        "max_retries": 2
+      },
+      "production": {
+        "enable_tracing": false,
+        "log_level": "WARNING",
+        "timeout_seconds": 30,
+        "max_retries": 3
+      }
+    },
+    "skip_nlp_for_file_types": [
+      "image/jpeg",
+      "image/png",
+      "image/bmp"
+    ],
+    "enable_parallel_processing": true,
+    "max_concurrent_documents": 5
+  },
+  "engine_selection": {
+    "file_type_handlers": {
+      "application/pdf": "pm_prism_pdf_handler_async",
+      "text/plain": "pm_prism_text_handler_async",
+      "text/markdown": "pm_prism_text_handler_async",
+      "text/html": "pm_prism_text_handler_async",
+      "image/jpeg": "pm_tesseract_ocr_reader_handler_async",
+      "image/png": "pm_tesseract_ocr_reader_handler_async",
+      "image/bmp": "pm_tesseract_ocr_reader_handler_async",
+      "url": "pm_playwright_web_image_handler_async"
+    },
+    "fallback_handlers": {
+      "application/pdf": "pm_prism_text_handler_async",
+      "image/jpeg": "pm_prism_text_handler_async",
+      "image/png": "pm_prism_text_handler_async",
+      "url": "pm_prism_text_handler_async"
+    },
+    "nlp_handlers": {
+      "basic": "pm_basic_text_cleaner_handler_async",
+      "spacy": "pm_spacy_text_cleaner_handler_async",
+      "advanced": "pm_advanced_nlp_handler_async"
+    },
+    "chunking_handlers": {
+      "fixed": "pm_fixed_chunk_handler_async",
+      "sentence": "pm_sentence_chunk_handler_async",
+      "optimized_summary": "pm_optimize_chunk_handler_async",
+      "semantic": "pm_semantic_chunk_handler_async"
+    },
+    "embedding_handlers": {
+      "nomic-ai": "pm_embed_batch_handler_async",
+      "openai": "pm_openai_embed_handler_async",
+      "openai-3-small": "pm_openai_3_small_handler_async",
+      "openai-3-large": "pm_openai_3_large_handler_async"
+    }
+  },
+  "handler_strategies": {
+    "default_strategies": {
+      "nlp_strategy": "spacy",
+      "chunking_strategy": "optimized_summary",
+      "embedding_provider": "nomic-ai"
+    },
+    "strategy_parameters": {
+      "chunking": {
+        "optimized_summary": {
+          "chunk_size": 800,
+          "chunk_overlap": 100,
+          "sentence_per_chunk": 5,
+          "sentence_overlap": 1,
+          "sentence_buffer": 2,
+          "max_tokens_per_chunk": 800,
+          "min_tokens_per_chunk": 128,
+          "chunk_overlap_sentences": 1
+        },
+        "fixed": {
+          "chunk_size": 512,
+          "chunk_overlap": 64
+        },
+        "sentence": {
+          "sentence_per_chunk": 3,
+          "sentence_overlap": 1,
+          "sentence_buffer": 1
+        },
+        "semantic": {
+          "similarity_threshold": 0.8,
+          "min_chunk_size": 200,
+          "max_chunk_size": 1000
+        }
+      },
+      "embedding": {
+        "nomic-ai": {
+          "vector_dimension": 768,
+          "normalize_vectors": true,
+          "batch_size": 32,
+          "device": "auto"
+        },
+        "openai": {
+          "vector_dimension": 1536,
+          "normalize_vectors": true,
+          "batch_size": 16,
+          "model_name": "text-embedding-ada-002"
+        },
+        "openai-3-small": {
+          "vector_dimension": 1536,
+          "normalize_vectors": true,
+          "batch_size": 16,
+          "model_name": "text-embedding-3-small"
+        },
+        "openai-3-large": {
+          "vector_dimension": 3072,
+          "normalize_vectors": true,
+          "batch_size": 8,
+          "model_name": "text-embedding-3-large"
+        }
+      },
+      "nlp": {
+        "spacy": {
+          "model_name": "en_core_web_sm",
+          "remove_stopwords": true,
+          "remove_punctuation": false,
+          "lowercase": true
+        },
+        "basic": {
+          "remove_extra_whitespace": true,
+          "remove_special_chars": false,
+          "normalize_unicode": true
+        }
+      }
+    },
+    "file_type_parameters": {
+      "pdf": {
+        "max_pages": null,
+        "clean_text": true,
+        "extract_images": false,
+        "preserve_layout": false
+      },
+      "image": {
+        "ocr_language": "eng",
+        "confidence_threshold": 0.6,
+        "preprocessing": true,
+        "deskew": true,
+        "denoise": true
+      },
+      "web": {
+        "wait_for_load": true,
+        "timeout_ms": 30000,
+        "extract_images": false,
+        "follow_redirects": true,
+        "user_agent": "FlatfileBot/1.0"
+      },
+      "text": {
+        "encoding": "utf-8",
+        "detect_encoding": true,
+        "normalize_line_endings": true
+      }
+    }
+  },
+  "integration_settings": {
+    "storage_integration": {
+      "auto_store_vectors": true,
+      "store_intermediate_results": false,
+      "cleanup_temp_files": true,
+      "backup_before_overwrite": true,
+      "compress_vectors": false
+    },
+    "performance_settings": {
+      "concurrent_documents": 5,
+      "vector_batch_size": 50,
+      "memory_limit_mb": 1024,
+      "timeout_per_document_seconds": 300,
+      "enable_caching": true,
+      "cache_ttl_seconds": 3600
+    },
+    "error_handling": {
+      "retry_attempts": 3,
+      "retry_delay_seconds": 1,
+      "exponential_backoff": true,
+      "continue_on_error": true,
+      "log_errors": true,
+      "raise_on_critical_error": true
+    },
+    "monitoring": {
+      "enable_metrics": true,
+      "enable_tracing": true,
+      "trace_sampling_rate": 1.0,
+      "metrics_interval_seconds": 60,
+      "log_performance": true
+    }
+  },
+  "environment": "development"
+}

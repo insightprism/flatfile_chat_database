@@ -14,10 +14,10 @@ import statistics
 import random
 import string
 
-from .config import StorageConfig
-from .storage import StorageManager
-from .models import Message, Document, SituationalContext
-from .search import SearchQuery
+from flatfile_chat_database.config import StorageConfig
+from flatfile_chat_database.storage import StorageManager
+from flatfile_chat_database.models import Message, Document, SituationalContext
+from flatfile_chat_database.search import SearchQuery
 
 
 class BenchmarkResult:

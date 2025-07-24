@@ -1,0 +1,4 @@
+{"role": "user", "content": "Hello! Can you help me with Python?", "id": "msg_80acc14a215d", "timestamp": "2025-07-22T17:53:33.999193", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "Of course! I'd be happy to help you with Python.", "id": "msg_ee16a21ce338", "timestamp": "2025-07-22T17:53:33.999200", "attachments": [], "metadata": {}}
+{"role": "user", "content": "How do I read a file in Python?", "id": "msg_25a58265dbd2", "timestamp": "2025-07-22T17:53:33.999203", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "You can use the open() function to read files in Python.", "id": "msg_4ef8ae82c2f1", "timestamp": "2025-07-22T17:53:33.999206", "attachments": [], "metadata": {}}

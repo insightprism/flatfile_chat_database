@@ -1,0 +1,5 @@
+
+        Recent advances in solar technology include perovskite solar cells,
+        which promise higher efficiency at lower costs. Concentrated solar power
+        uses mirrors to focus sunlight for thermal energy generation.
+        

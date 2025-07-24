@@ -1,0 +1,54 @@
+{
+  "flatfile_config": {
+    "storage_base_path": "./data_dev",
+    "default_chunking_strategy": "optimized_summary",
+    "default_embedding_provider": "nomic-ai"
+  },
+  "document_processing": {
+    "environment_configs": {
+      "development": {
+        "enable_tracing": true,
+        "log_level": "DEBUG",
+        "timeout_seconds": 120,
+        "max_retries": 1
+      }
+    },
+    "max_concurrent_documents": 2
+  },
+  "handler_strategies": {
+    "strategy_parameters": {
+      "chunking": {
+        "optimized_summary": {
+          "chunk_size": 400,
+          "max_tokens_per_chunk": 400,
+          "min_tokens_per_chunk": 64
+        }
+      },
+      "embedding": {
+        "nomic-ai": {
+          "batch_size": 16
+        }
+      }
+    }
+  },
+  "integration_settings": {
+    "performance_settings": {
+      "concurrent_documents": 2,
+      "vector_batch_size": 25,
+      "memory_limit_mb": 512,
+      "timeout_per_document_seconds": 600
+    },
+    "error_handling": {
+      "retry_attempts": 1,
+      "continue_on_error": false,
+      "raise_on_critical_error": true
+    },
+    "monitoring": {
+      "enable_metrics": true,
+      "enable_tracing": true,
+      "trace_sampling_rate": 1.0,
+      "log_performance": true
+    }
+  },
+  "environment": "development"
+}

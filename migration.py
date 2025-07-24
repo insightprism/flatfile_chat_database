@@ -13,11 +13,11 @@ from dataclasses import dataclass
 import sqlite3
 from abc import ABC, abstractmethod
 
-from .config import StorageConfig
-from .storage import StorageManager
-from .models import Message, Session, Document, SituationalContext, UserProfile
-from .streaming import ExportStreamer, StreamConfig
-from .compression import CompressionManager, CompressionConfig, CompressionType
+from flatfile_chat_database.config import StorageConfig
+from flatfile_chat_database.storage import StorageManager
+from flatfile_chat_database.models import Message, Session, Document, SituationalContext, UserProfile
+from flatfile_chat_database.streaming import ExportStreamer, StreamConfig
+from flatfile_chat_database.compression import CompressionManager, CompressionConfig, CompressionType
 
 
 @dataclass
@@ -489,35 +489,35 @@ class FlatfileExporter:
                 
                 # Export messages using streaming
                 async for chunk in self.streamer.stream_session_export(
-                    user_id, session.id, include_documents=True, include_context=True
+                    user_id, session.session_id, include_documents=True, include_context=True
                 ):
                     
                     if chunk["type"] == "messages":
-                        saved = await adapter.save_messages(session.id, chunk["data"])
+                        saved = await adapter.save_messages(session.session_id, chunk["data"])
                         stats.total_messages += saved
                     
                     elif chunk["type"] == "documents":
                         for doc_id, doc_data in chunk["data"].items():
-                            doc_data["session_id"] = session.id
+                            doc_data["session_id"] = session.session_id
                             if await adapter.save_document(doc_data):
                                 stats.total_documents += 1
                     
                     elif chunk["type"] == "context":
                         context_data = chunk["data"]
-                        context_data["session_id"] = session.id
+                        context_data["session_id"] = session.session_id
                         context_data["is_current"] = True
                         if await adapter.save_context(context_data):
                             stats.total_contexts += 1
                     
                     elif chunk["type"] == "context_history":
                         context_data = chunk["data"]["context"]
-                        context_data["session_id"] = session.id
+                        context_data["session_id"] = session.session_id
                         context_data["id"] = chunk["data"]["snapshot_id"]
                         if await adapter.save_context(context_data):
                             stats.total_contexts += 1
                             
             except Exception as e:
-                stats.add_error("session_export", str(e), session.id)
+                stats.add_error("session_export", str(e), session.session_id)
     
     async def _export_user_to_dict(self, user_id: str, 
                                  stats: MigrationStats) -> Optional[Dict[str, Any]]:
@@ -547,7 +547,7 @@ class FlatfileExporter:
             
             # Stream session data
             async for chunk in self.streamer.stream_session_export(
-                user_id, session.id, include_documents=True, include_context=True
+                user_id, session.session_id, include_documents=True, include_context=True
             ):
                 if chunk["type"] == "messages":
                     session_data["messages"].extend(chunk["data"])
@@ -562,7 +562,7 @@ class FlatfileExporter:
                     session_data["context_history"].append(chunk["data"])
                     stats.total_contexts += 1
             
-            user_data["sessions"][session.id] = session_data
+            user_data["sessions"][session.session_id] = session_data
         
         return user_data
 

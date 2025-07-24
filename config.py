@@ -10,7 +10,7 @@ import json
 import dataclasses
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 
 @dataclass
@@ -93,6 +93,71 @@ class StorageConfig:
     lock_timeout_seconds: float = 30.0
     lock_retry_delay_ms: int = 10
     lock_strategy: str = "file"  # "file" or "database" for future
+    
+    # Vector storage configuration
+    vector_storage_subdirectory: str = "vectors"
+    vector_index_filename: str = "vector_index.jsonl"
+    embeddings_filename: str = "embeddings.npy"
+    
+    # Chunking configuration - OPTIMIZED_SUMMARY AS DEFAULT
+    default_chunking_strategy: str = "optimized_summary"
+    chunking_strategies: Dict[str, Dict[str, Any]] = field(default_factory=lambda: {
+        "optimized_summary": {
+            "chunk_strategy": "optimize",
+            "chunk_size": 800,
+            "chunk_overlap": 100,
+            "sentence_per_chunk": 5,
+            "sentence_overlap": 1,
+            "sentence_buffer": 2,
+            "max_tokens_per_chunk": 800,
+            "min_tokens_per_chunk": 128,
+            "chunk_overlap_sentences": 1
+        },
+        "default_fixed": {
+            "chunk_strategy": "fixed",
+            "chunk_size": 512,
+            "chunk_overlap": 64
+        },
+        "sentence_short": {
+            "chunk_strategy": "sentence",
+            "sentence_per_chunk": 2,
+            "sentence_overlap": 0
+        }
+    })
+    
+    # Embedding configuration - NOMIC-AI AS DEFAULT
+    default_embedding_provider: str = "nomic-ai"
+    embedding_providers: Dict[str, Dict[str, Any]] = field(default_factory=lambda: {
+        "nomic-ai": {
+            "model_name": "nomic-ai/nomic-embed-text-v1",
+            "embedding_dimension": 768,
+            "requires_api_key": False,
+            "normalize_vectors": True
+        },
+        "openai": {
+            "model_name": "text-embedding-ada-002",
+            "embedding_dimension": 1536,
+            "requires_api_key": True,
+            "normalize_vectors": True,
+            "api_url": "https://api.openai.com/v1/embeddings"
+        }
+    })
+    
+    # Vector search configuration
+    vector_search_top_k: int = 5
+    similarity_threshold: float = 0.7
+    hybrid_search_weight: float = 0.5  # Balance between text and vector search
+    
+    # SpaCy model for chunking
+    spacy_model_name: str = "en_core_web_sm"
+    
+    # Performance settings
+    vector_batch_size: int = 32  # Number of texts to embed at once
+    vector_cache_enabled: bool = True
+    vector_mmap_mode: str = "r"  # Memory-mapped file mode for large embeddings
+    
+    # Additional fields for directories
+    session_data_directory_name: str = "sessions"
     
     def validate(self) -> None:
         """Validate configuration values"""

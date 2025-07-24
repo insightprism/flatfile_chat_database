@@ -15,7 +15,7 @@ import platform
 import time
 from datetime import datetime
 
-from ..config import StorageConfig
+from flatfile_chat_database.config import StorageConfig
 
 
 class FileOperationError(Exception):

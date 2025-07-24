@@ -10,13 +10,13 @@ from typing import Dict, List, Optional, Any, Union
 from datetime import datetime
 import uuid
 
-from .config import StorageConfig
-from .backends import StorageBackend, FlatfileBackend
-from .models import (
+from flatfile_chat_database.config import StorageConfig
+from flatfile_chat_database.backends import StorageBackend, FlatfileBackend
+from flatfile_chat_database.models import (
     Message, Session, Panel, SituationalContext, Document,
     UserProfile, Persona, PanelMessage, PanelInsight
 )
-from .utils import (
+from flatfile_chat_database.utils import (
     write_json, read_json, append_jsonl, read_jsonl, read_jsonl_paginated,
     get_user_path, get_session_path, get_panel_path, get_global_personas_path,
     get_user_personas_path, get_documents_path, get_context_history_path,
@@ -26,7 +26,24 @@ from .utils import (
     get_user_key, get_session_key, get_profile_key, get_messages_key,
     get_session_metadata_key
 )
-from .search import AdvancedSearchEngine, SearchQuery, SearchResult
+from flatfile_chat_database.search import AdvancedSearchEngine, SearchQuery, SearchResult
+from flatfile_chat_database.vector_storage import FlatfileVectorStorage
+from flatfile_chat_database.chunking import ChunkingEngine
+from flatfile_chat_database.embedding import EmbeddingEngine
+
+# Import PrismMind integration
+try:
+    from flatfile_chat_database.prismmind_integration import (
+        FlatfileDocumentProcessor,
+        FlatfilePrismMindConfig,
+        FlatfilePrismMindConfigLoader
+    )
+    PRISMMIND_INTEGRATION_AVAILABLE = True
+except ImportError:
+    FlatfileDocumentProcessor = None
+    FlatfilePrismMindConfig = None
+    FlatfilePrismMindConfigLoader = None
+    PRISMMIND_INTEGRATION_AVAILABLE = False
 
 
 class StorageManager:
@@ -38,19 +55,39 @@ class StorageManager:
     """
     
     def __init__(self, config: Optional[StorageConfig] = None, 
-                 backend: Optional[StorageBackend] = None):
+                 backend: Optional[StorageBackend] = None,
+                 enable_prismmind: bool = True):
         """
         Initialize storage manager.
         
         Args:
             config: Storage configuration (uses default if not provided)
             backend: Storage backend (uses FlatfileBackend if not provided)
+            enable_prismmind: Whether to enable PrismMind integration
         """
         self.config = config or StorageConfig()
         self.backend = backend or FlatfileBackend(self.config)
         self.base_path = Path(self.config.storage_base_path)
         self._initialized = False
         self.search_engine = AdvancedSearchEngine(self.config)
+        
+        # Initialize vector components
+        self.vector_storage = FlatfileVectorStorage(self.config)
+        self.chunking_engine = ChunkingEngine(self.config)
+        self.embedding_engine = EmbeddingEngine(self.config)
+        
+        # Initialize PrismMind integration
+        self.prismmind_processor = None
+        self.prismmind_available = PRISMMIND_INTEGRATION_AVAILABLE and enable_prismmind
+        
+        if self.prismmind_available:
+            try:
+                # Create PrismMind configuration from flatfile config
+                prismmind_config = FlatfilePrismMindConfig(flatfile_config=self.config)
+                self.prismmind_processor = FlatfileDocumentProcessor(prismmind_config)
+            except Exception as e:
+                print(f"Failed to initialize PrismMind integration: {e}")
+                self.prismmind_available = False
     
     async def initialize(self) -> bool:
         """
@@ -209,7 +246,7 @@ class StorageManager:
         
         # Create session object
         session = Session(
-            id=session_id,
+            session_id=session_id,
             user_id=user_id,
             title=title or "New Chat"
         )
@@ -279,6 +316,21 @@ class StorageManager:
         session_key = str(paths["session_metadata"].relative_to(self.base_path))
         
         return await self._write_json(session_key, session.to_dict())
+    
+    async def update_session_metadata(self, user_id: str, session_id: str, 
+                                    metadata: Dict[str, Any]) -> bool:
+        """
+        Update session metadata - compatibility method for chat interface.
+        
+        Args:
+            user_id: User identifier
+            session_id: Session identifier
+            metadata: Metadata updates to apply
+            
+        Returns:
+            True if successful
+        """
+        return await self.update_session(user_id, session_id, {"metadata": metadata})
     
     async def list_sessions(self, user_id: str, limit: Optional[int] = None, 
                           offset: int = 0) -> List[Session]:
@@ -420,14 +472,16 @@ class StorageManager:
         return await self.get_messages(user_id, session_id, limit=None)
     
     async def search_messages(self, user_id: str, query: str, 
-                            session_id: Optional[str] = None) -> List[Message]:
+                            session_id: Optional[str] = None,
+                            session_ids: Optional[List[str]] = None) -> List[Message]:
         """
         Search messages across sessions.
         
         Args:
             user_id: User identifier
             query: Search query
-            session_id: Optional session to limit search to
+            session_id: Optional single session to limit search to
+            session_ids: Optional list of sessions to limit search to
             
         Returns:
             List of matching messages
@@ -435,20 +489,24 @@ class StorageManager:
         # This is a simple implementation - could be optimized with indexing
         matching_messages = []
         
+        # Determine which sessions to search
         if session_id:
-            # Search single session
-            messages = await self.get_all_messages(user_id, session_id)
-            for msg in messages:
-                if query.lower() in msg.content.lower():
-                    matching_messages.append(msg)
+            # Search single session (backward compatibility)
+            search_session_ids = [session_id]
+        elif session_ids:
+            # Search specific sessions
+            search_session_ids = session_ids
         else:
             # Search all sessions
             sessions = await self.list_sessions(user_id, limit=None)
-            for session in sessions:
-                messages = await self.get_all_messages(user_id, session.id)
-                for msg in messages:
-                    if query.lower() in msg.content.lower():
-                        matching_messages.append(msg)
+            search_session_ids = [session.session_id for session in sessions]
+        
+        # Search through the determined sessions
+        for sid in search_session_ids:
+            messages = await self.get_all_messages(user_id, sid)
+            for msg in messages:
+                if query.lower() in msg.content.lower():
+                    matching_messages.append(msg)
         
         # Limit results
         return matching_messages[:self.config.search_results_default_limit]
@@ -694,6 +752,271 @@ class StorageManager:
         docs_metadata[document_id] = doc.to_dict()
         
         return await self._write_json(metadata_key, docs_metadata)
+    
+    # === Vector Storage and Search ===
+    
+    async def store_document_with_vectors(
+        self,
+        user_id: str,
+        session_id: str,
+        document_id: str,
+        content: str,
+        metadata: Optional[Dict[str, Any]] = None,
+        chunking_strategy: str = None,
+        embedding_provider: str = None,
+        api_key: Optional[str] = None
+    ) -> bool:
+        """
+        Store document with automatic chunking and embedding generation.
+        
+        Args:
+            user_id: User identifier
+            session_id: Session identifier
+            document_id: Document identifier
+            content: Document text content
+            metadata: Optional document metadata
+            chunking_strategy: Strategy for chunking (default: "optimized_summary")
+            embedding_provider: Provider for embeddings (default: "nomic-ai")
+            api_key: API key if required by provider
+            
+        Returns:
+            True if successful
+        """
+        # Store the document normally first
+        # Add a .txt extension if document_id doesn't have one
+        filename = document_id if '.' in document_id else f"{document_id}.txt"
+        doc_stored = await self.save_document(
+            user_id, session_id, filename,
+            content.encode('utf-8'), metadata
+        )
+        
+        if not doc_stored:
+            return False
+        
+        try:
+            # Chunk the content
+            chunks = await self.chunking_engine.chunk_text(
+                content, 
+                strategy=chunking_strategy
+            )
+            
+            # Generate embeddings
+            embedding_results = await self.embedding_engine.generate_embeddings(
+                chunks,
+                provider=embedding_provider,
+                api_key=api_key
+            )
+            
+            # Extract vectors
+            vectors = [r["embedding_vector"] for r in embedding_results]
+            
+            # Store vectors
+            vector_metadata = {
+                "provider": embedding_provider or self.config.default_embedding_provider,
+                "chunking_strategy": chunking_strategy or self.config.default_chunking_strategy,
+                "document_id": document_id,
+                "chunk_count": len(chunks)
+            }
+            
+            success = await self.vector_storage.store_vectors(
+                session_id=session_id,
+                document_id=document_id,
+                chunks=chunks,
+                vectors=vectors,
+                metadata=vector_metadata
+            )
+            
+            return success
+            
+        except Exception as e:
+            print(f"Error generating vectors: {e}")
+            return False
+    
+    async def vector_search(
+        self,
+        user_id: str,
+        query: str,
+        session_ids: Optional[List[str]] = None,
+        top_k: int = 5,
+        threshold: float = 0.7,
+        embedding_provider: str = None,
+        api_key: Optional[str] = None
+    ) -> List[SearchResult]:
+        """
+        Perform vector similarity search across sessions.
+        
+        Args:
+            user_id: User identifier
+            query: Search query text
+            session_ids: Optional list of sessions to search (None = all)
+            top_k: Number of results to return
+            threshold: Minimum similarity threshold
+            embedding_provider: Provider for query embedding (default: "nomic-ai")
+            api_key: API key if required
+            
+        Returns:
+            List of search results sorted by relevance
+        """
+        # Generate query embedding
+        embedding_results = await self.embedding_engine.generate_embeddings(
+            [query],
+            provider=embedding_provider,
+            api_key=api_key
+        )
+        
+        query_vector = embedding_results[0]["embedding_vector"]
+        
+        # Get sessions to search
+        if not session_ids:
+            sessions = await self.list_sessions(user_id)
+            session_ids = [s.session_id for s in sessions]
+        
+        # Search across sessions
+        all_results = []
+        
+        for session_id in session_ids:
+            try:
+                results = await self.vector_storage.search_similar(
+                    session_id=session_id,
+                    query_vector=query_vector,
+                    top_k=top_k,
+                    threshold=threshold
+                )
+                
+                # Convert to SearchResult format
+                for r in results:
+                    search_result = SearchResult(
+                        id=r.chunk_id,
+                        type="vector_chunk",
+                        content=r.chunk_text,
+                        session_id=r.session_id,
+                        user_id=user_id,
+                        timestamp=datetime.now().isoformat(),
+                        relevance_score=r.similarity_score,
+                        highlights=[],
+                        metadata={
+                            "document_id": r.document_id,
+                            "search_type": "vector",
+                            **r.metadata
+                        }
+                    )
+                    all_results.append(search_result)
+                    
+            except Exception as e:
+                print(f"Error searching session {session_id}: {e}")
+                continue
+        
+        # Sort by relevance and return top results
+        all_results.sort(key=lambda x: x.relevance_score, reverse=True)
+        return all_results[:top_k]
+    
+    async def hybrid_search(
+        self,
+        user_id: str,
+        query: str,
+        session_ids: Optional[List[str]] = None,
+        top_k: int = 10,
+        vector_weight: float = 0.5,
+        **kwargs
+    ) -> List[SearchResult]:
+        """
+        Perform hybrid search combining text and vector search.
+        
+        Args:
+            user_id: User identifier
+            query: Search query
+            session_ids: Sessions to search
+            top_k: Number of results
+            vector_weight: Weight for vector search (0-1)
+            **kwargs: Additional arguments for searches
+            
+        Returns:
+            Combined and re-ranked results
+        """
+        # Perform text search
+        search_query = SearchQuery(
+            query=query,
+            user_id=user_id,
+            session_ids=session_ids,
+            max_results=top_k
+        )
+        text_results = await self.search_engine.search(search_query)
+        
+        # Perform vector search
+        vector_results = await self.vector_search(
+            user_id, query, session_ids, top_k=top_k, **kwargs
+        )
+        
+        # Combine and re-rank
+        combined = {}
+        
+        # Add text results
+        for r in text_results:
+            key = f"{r.session_id}_{r.id}"
+            combined[key] = {
+                "result": r,
+                "text_score": r.relevance_score,
+                "vector_score": 0.0
+            }
+        
+        # Add/update with vector results
+        for r in vector_results:
+            key = f"{r.session_id}_{r.id}"
+            if key in combined:
+                combined[key]["vector_score"] = r.relevance_score
+            else:
+                combined[key] = {
+                    "result": r,
+                    "text_score": 0.0,
+                    "vector_score": r.relevance_score
+                }
+        
+        # Calculate combined scores
+        for key, data in combined.items():
+            text_weight = 1.0 - vector_weight
+            data["combined_score"] = (
+                text_weight * data["text_score"] +
+                vector_weight * data["vector_score"]
+            )
+            data["result"].relevance_score = data["combined_score"]
+        
+        # Sort and return
+        results = [data["result"] for data in combined.values()]
+        results.sort(key=lambda x: x.relevance_score, reverse=True)
+        
+        return results[:top_k]
+    
+    async def delete_document_vectors(
+        self, 
+        user_id: str,
+        session_id: str, 
+        document_id: str
+    ) -> bool:
+        """
+        Delete all vectors associated with a document.
+        
+        Args:
+            user_id: User identifier
+            session_id: Session identifier
+            document_id: Document identifier
+            
+        Returns:
+            True if successful
+        """
+        return await self.vector_storage.delete_document_vectors(session_id, document_id)
+    
+    async def get_vector_stats(self, user_id: str, session_id: str) -> Dict[str, Any]:
+        """
+        Get statistics about vectors in a session.
+        
+        Args:
+            user_id: User identifier
+            session_id: Session identifier
+            
+        Returns:
+            Dictionary with vector statistics
+        """
+        return await self.vector_storage.get_vector_stats(session_id)
     
     # === Context Management ===
     
@@ -1015,6 +1338,101 @@ class StorageManager:
                     personas.append(persona_data)
         
         return personas
+    
+    # === PrismMind Integration ===
+    
+    async def process_document_with_prismmind(
+        self,
+        document_path: str,
+        user_id: str,
+        session_id: str,
+        document_id: Optional[str] = None,
+        chunking_strategy: Optional[str] = None,
+        embedding_provider: Optional[str] = None,
+        api_key: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Process a document using PrismMind engines.
+        
+        This method provides direct access to PrismMind processing capabilities,
+        offering universal file support and advanced processing chains.
+        
+        Args:
+            document_path: Path to document file
+            user_id: User identifier  
+            session_id: Session identifier
+            document_id: Optional document ID (auto-generated if not provided)
+            chunking_strategy: Override default chunking strategy
+            embedding_provider: Override default embedding provider
+            api_key: API key if required for embedding
+            metadata: Additional document metadata
+            
+        Returns:
+            Processing result dictionary with success status and details
+        """
+        if not self.prismmind_available or not self.prismmind_processor:
+            return {
+                "success": False,
+                "error": "PrismMind integration not available",
+                "document_id": document_id or "",
+                "chunk_count": 0,
+                "vector_count": 0,
+                "processing_time": 0
+            }
+        
+        try:
+            result = await self.prismmind_processor.process_document(
+                document_path=document_path,
+                user_id=user_id,
+                session_id=session_id,
+                document_id=document_id,
+                chunking_strategy=chunking_strategy,
+                embedding_provider=embedding_provider,
+                api_key=api_key,
+                metadata=metadata
+            )
+            
+            # Convert ProcessingResult to dict if needed
+            if hasattr(result, 'to_dict'):
+                return result.to_dict()
+            elif hasattr(result, '__dict__'):
+                return result.__dict__
+            else:
+                return result
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"PrismMind processing failed: {str(e)}",
+                "document_id": document_id or "",
+                "chunk_count": 0,
+                "vector_count": 0,
+                "processing_time": 0
+            }
+    
+    def get_prismmind_config(self) -> Optional[Dict[str, Any]]:
+        """
+        Get current PrismMind configuration.
+        
+        Returns:
+            Configuration dictionary or None if not available
+        """
+        if not self.prismmind_available or not self.prismmind_processor:
+            return None
+            
+        return self.prismmind_processor.config.to_dict() if hasattr(self.prismmind_processor.config, 'to_dict') else None
+    
+    def is_prismmind_available(self) -> bool:
+        """
+        Check if PrismMind integration is available and properly initialized.
+        
+        Returns:
+            True if PrismMind integration is available
+        """
+        return self.prismmind_available and self.prismmind_processor is not None
+    
+    # === Helper Methods ===
     
     def _guess_mime_type(self, filename: str) -> str:
         """Guess MIME type from filename"""

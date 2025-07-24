@@ -1,0 +1,69 @@
+{
+  "flatfile_config": {
+    "storage_base_path": "/var/lib/flatfile_data",
+    "default_chunking_strategy": "optimized_summary",
+    "default_embedding_provider": "nomic-ai",
+    "backup_before_delete": true,
+    "enable_compression": true
+  },
+  "document_processing": {
+    "environment_configs": {
+      "production": {
+        "enable_tracing": false,
+        "log_level": "WARNING",
+        "timeout_seconds": 30,
+        "max_retries": 3
+      }
+    },
+    "max_concurrent_documents": 10
+  },
+  "handler_strategies": {
+    "strategy_parameters": {
+      "chunking": {
+        "optimized_summary": {
+          "chunk_size": 1000,
+          "max_tokens_per_chunk": 1000,
+          "min_tokens_per_chunk": 200
+        }
+      },
+      "embedding": {
+        "nomic-ai": {
+          "batch_size": 64
+        },
+        "openai": {
+          "batch_size": 32
+        }
+      }
+    }
+  },
+  "integration_settings": {
+    "storage_integration": {
+      "compress_vectors": true,
+      "backup_before_overwrite": true
+    },
+    "performance_settings": {
+      "concurrent_documents": 10,
+      "vector_batch_size": 100,
+      "memory_limit_mb": 2048,
+      "timeout_per_document_seconds": 120,
+      "enable_caching": true,
+      "cache_ttl_seconds": 7200
+    },
+    "error_handling": {
+      "retry_attempts": 3,
+      "retry_delay_seconds": 2,
+      "exponential_backoff": true,
+      "continue_on_error": true,
+      "log_errors": true,
+      "raise_on_critical_error": false
+    },
+    "monitoring": {
+      "enable_metrics": true,
+      "enable_tracing": false,
+      "trace_sampling_rate": 0.1,
+      "metrics_interval_seconds": 300,
+      "log_performance": false
+    }
+  },
+  "environment": "production"
+}

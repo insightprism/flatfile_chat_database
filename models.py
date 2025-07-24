@@ -27,6 +27,13 @@ class PanelType(str, Enum):
     BRAINSTORM = "brainstorm"
 
 
+class SearchType(str, Enum):
+    """Types of search operations"""
+    TEXT = "text"
+    VECTOR = "vector"
+    HYBRID = "hybrid"
+
+
 def generate_message_id() -> str:
     """Generate unique message ID"""
     return f"msg_{uuid.uuid4().hex[:12]}"
@@ -42,7 +49,7 @@ class Message:
     """Individual chat message"""
     role: str  # Can be MessageRole value or persona_id for panels
     content: str
-    id: str = field(default_factory=generate_message_id)
+    message_id: str = field(default_factory=generate_message_id)
     timestamp: str = field(default_factory=current_timestamp)
     attachments: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -67,7 +74,7 @@ class Message:
 @dataclass
 class Session:
     """Chat session metadata"""
-    id: str
+    session_id: str
     user_id: str
     title: str = "New Chat"
     created_at: str = field(default_factory=current_timestamp)
@@ -77,7 +84,7 @@ class Session:
     
     def __post_init__(self):
         """Validate session after initialization"""
-        if not self.id:
+        if not self.session_id:
             raise ValueError("Session ID cannot be empty")
         if not self.user_id:
             raise ValueError("User ID cannot be empty")
@@ -85,6 +92,16 @@ class Session:
     def update_timestamp(self) -> None:
         """Update the updated_at timestamp"""
         self.updated_at = current_timestamp()
+    
+    @property
+    def session_name(self) -> str:
+        """Compatibility property - maps to title"""
+        return self.title
+    
+    @session_name.setter
+    def session_name(self, value: str) -> None:
+        """Compatibility property setter - maps to title"""
+        self.title = value
         
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for storage"""
@@ -329,3 +346,52 @@ class PanelInsight:
     def from_dict(cls, data: Dict[str, Any]) -> 'PanelInsight':
         """Create from dictionary"""
         return cls(**data)
+
+
+@dataclass
+class VectorSearchResult:
+    """Result from vector similarity search"""
+    chunk_id: str
+    chunk_text: str
+    similarity_score: float
+    document_id: str
+    session_id: str
+    metadata: Dict[str, Any]
+    
+    def __post_init__(self):
+        """Validate search result"""
+        if self.similarity_score < 0 or self.similarity_score > 1:
+            raise ValueError("Similarity score must be between 0 and 1")
+
+
+@dataclass
+class VectorMetadata:
+    """Metadata for stored vectors"""
+    chunk_id: str
+    vector_index: int
+    document_id: str
+    session_id: str
+    chunk_text: str
+    chunk_metadata: Dict[str, Any] = field(default_factory=dict)
+    embedding_metadata: Dict[str, Any] = field(default_factory=dict)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for storage"""
+        return asdict(self)
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'VectorMetadata':
+        """Create from dictionary"""
+        return cls(**data)
+
+
+@dataclass
+class ProcessingResult:
+    """Result from document processing pipeline"""
+    success: bool
+    document_id: str
+    chunk_count: int
+    vector_count: int
+    processing_time: float
+    error: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
