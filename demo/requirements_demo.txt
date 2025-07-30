@@ -1,0 +1,50 @@
+# Demo-specific requirements for Flatfile Chat Database
+# These are additional packages needed to run the demo scripts
+
+# Core scientific computing
+numpy>=1.21.0
+pandas>=1.3.0
+
+# Jupyter notebook support
+jupyter>=1.0.0
+ipython>=7.0.0
+ipykernel>=6.0.0
+
+# Visualization (optional, for enhanced notebook experience)
+matplotlib>=3.3.0
+seaborn>=0.11.0
+
+# Progress bars and UI enhancements
+tqdm>=4.60.0
+
+# Development and testing tools
+pytest>=6.0.0
+pytest-asyncio>=0.15.0
+
+# Data serialization (should already be available in Python, but explicit for clarity)
+json5>=0.9.0
+
+# Type checking support
+mypy>=0.900
+
+# Code formatting and linting (for development)
+black>=21.0.0
+flake8>=3.9.0
+isort>=5.9.0
+
+# Memory profiling (for performance monitoring in demos)
+psutil>=5.8.0
+memory-profiler>=0.60.0
+
+# Rich text formatting for CLI demo
+rich>=10.0.0
+
+# Async HTTP client (for advanced examples)
+aiohttp>=3.7.0
+
+# Configuration parsing
+pyyaml>=5.4.0
+toml>=0.10.0
+
+# Note: The parent project's requirements.txt should be installed first
+# These are supplementary packages to enhance the demo experience

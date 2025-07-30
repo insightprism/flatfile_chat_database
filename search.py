@@ -13,9 +13,9 @@ from dataclasses import dataclass, field
 import re
 from collections import defaultdict, Counter
 
-from flatfile_chat_database.config import StorageConfig
-from flatfile_chat_database.models import Message, Session, Document, SituationalContext, SearchType
-from flatfile_chat_database.utils import read_json, read_jsonl, get_user_path
+from config import StorageConfig
+from models import Message, Session, Document, SituationalContext, SearchType
+from utils import read_json, read_jsonl, get_user_path
 
 
 @dataclass
@@ -654,8 +654,9 @@ class AdvancedSearchEngine:
         """Simple tokenization"""
         # Remove punctuation and split
         words = re.findall(r'\b\w+\b', text.lower())
-        # Filter out very short words
-        return [w for w in words if len(w) > 2]
+        # Filter out very short words using configured minimum length
+        min_length = self.config.search_min_word_length
+        return [w for w in words if len(w) >= min_length]
     
     async def vector_search(self, query: SearchQuery) -> List[SearchResult]:
         """
@@ -671,7 +672,7 @@ class AdvancedSearchEngine:
             return []
         
         # Import StorageManager here to avoid circular imports
-        from .storage import StorageManager
+        from storage import StorageManager
         
         # Use StorageManager for vector search
         storage = StorageManager(self.config)
@@ -702,7 +703,7 @@ class AdvancedSearchEngine:
         """
         if query.hybrid_search:
             # Use hybrid search from StorageManager
-            from .storage import StorageManager
+            from storage import StorageManager
             storage = StorageManager(self.config)
             
             return await storage.hybrid_search(

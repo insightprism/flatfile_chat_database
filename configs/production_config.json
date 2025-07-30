@@ -4,7 +4,16 @@
     "default_chunking_strategy": "optimized_summary",
     "default_embedding_provider": "nomic-ai",
     "backup_before_delete": true,
-    "enable_compression": true
+    "enable_compression": true,
+    "lock_retry_delay_ms": 10,
+    "lock_retry_max_delay_seconds": 2.0,
+    "file_operation_max_retries": 5,
+    "file_operation_retry_delay_ms": 20,
+    "message_id_length": 12,
+    "insight_id_length": 12,
+    "temp_file_suffix_length": 8,
+    "search_min_word_length": 3,
+    "fallback_chunk_size_limit": 800
   },
   "document_processing": {
     "environment_configs": {

@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, AsyncIterator
 import aiofiles
 
-from flatfile_chat_database.config import StorageConfig
-from flatfile_chat_database.utils.file_ops import atomic_write, atomic_append, safe_read
+from config import StorageConfig
+from utils.file_ops import atomic_write, atomic_append, safe_read
 
 
 class JSONError(Exception):

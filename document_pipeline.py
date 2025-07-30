@@ -11,13 +11,13 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 import warnings
 
-from flatfile_chat_database.storage import StorageManager
-from flatfile_chat_database.config import StorageConfig
-from flatfile_chat_database.models import Document, ProcessingResult
+from storage import StorageManager
+from config import StorageConfig
+from models import Document, ProcessingResult
 
 # Import PrismMind integration
 try:
-    from flatfile_chat_database.prismmind_integration import (
+    from prismmind_integration import (
         FlatfileDocumentProcessor,
         FlatfilePrismMindConfig,
         FlatfilePrismMindConfigLoader
@@ -361,15 +361,11 @@ class DocumentRAGPipeline:
             with open(file_path, 'r', encoding='utf-8') as f:
                 reader = csv.reader(f)
                 for row in reader:
-                    text_lines.append(", ".join(row))
-            return "\n".join(text_lines)
+                    text_lines.append(', '.join(row))
+            return '\n'.join(text_lines)
         else:
-            # For now, try to read as text
-            # TODO: Integrate with PrismMind ingestion engines for PDF, DOCX, etc.
-            try:
-                return file_path.read_text(encoding='utf-8')
-            except:
-                return ""
+            # For unsupported types, raise an error or return empty
+            raise ValueError(f"Unsupported file type: {file_path.suffix}")
     
     async def reprocess_document(
         self,

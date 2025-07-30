@@ -34,9 +34,26 @@ class SearchType(str, Enum):
     HYBRID = "hybrid"
 
 
-def generate_message_id() -> str:
-    """Generate unique message ID"""
-    return f"msg_{uuid.uuid4().hex[:12]}"
+def generate_message_id(config: Optional['StorageConfig'] = None) -> str:
+    """Generate unique message ID with configurable length"""
+    from config import StorageConfig
+    if config is None:
+        # Use default length if no config provided (for backward compatibility)
+        length = 12
+    else:
+        length = config.message_id_length
+    return f"msg_{uuid.uuid4().hex[:length]}"
+
+
+def generate_insight_id(config: Optional['StorageConfig'] = None) -> str:
+    """Generate unique insight ID with configurable length"""
+    from config import StorageConfig
+    if config is None:
+        # Use default length if no config provided (for backward compatibility)
+        length = 12
+    else:
+        length = config.insight_id_length
+    return f"insight_{uuid.uuid4().hex[:length]}"
 
 
 def current_timestamp() -> str:
@@ -319,7 +336,7 @@ class Persona:
 @dataclass
 class PanelInsight:
     """Analysis or conclusion from a panel session"""
-    id: str = field(default_factory=lambda: f"insight_{uuid.uuid4().hex[:12]}")
+    id: str = field(default_factory=lambda: generate_insight_id())
     panel_id: str = ""
     type: str = "conclusion"  # conclusion, analysis, summary, recommendation
     content: str = ""

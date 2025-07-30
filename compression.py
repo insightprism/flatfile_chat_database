@@ -12,7 +12,7 @@ from typing import Union, Optional, Dict, Any
 import json
 from enum import Enum
 
-from flatfile_chat_database.config import StorageConfig
+from config import StorageConfig
 
 
 class CompressionType(Enum):

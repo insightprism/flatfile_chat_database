@@ -10,13 +10,13 @@ from typing import Dict, List, Optional, Any, Union
 from datetime import datetime
 import uuid
 
-from flatfile_chat_database.config import StorageConfig
-from flatfile_chat_database.backends import StorageBackend, FlatfileBackend
-from flatfile_chat_database.models import (
+from config import StorageConfig
+from backends import StorageBackend, FlatfileBackend
+from models import (
     Message, Session, Panel, SituationalContext, Document,
     UserProfile, Persona, PanelMessage, PanelInsight
 )
-from flatfile_chat_database.utils import (
+from utils import (
     write_json, read_json, append_jsonl, read_jsonl, read_jsonl_paginated,
     get_user_path, get_session_path, get_panel_path, get_global_personas_path,
     get_user_personas_path, get_documents_path, get_context_history_path,
@@ -26,14 +26,14 @@ from flatfile_chat_database.utils import (
     get_user_key, get_session_key, get_profile_key, get_messages_key,
     get_session_metadata_key
 )
-from flatfile_chat_database.search import AdvancedSearchEngine, SearchQuery, SearchResult
-from flatfile_chat_database.vector_storage import FlatfileVectorStorage
-from flatfile_chat_database.chunking import ChunkingEngine
-from flatfile_chat_database.embedding import EmbeddingEngine
+from search import AdvancedSearchEngine, SearchQuery, SearchResult
+from vector_storage import FlatfileVectorStorage
+from chunking import ChunkingEngine
+from embedding import EmbeddingEngine
 
 # Import PrismMind integration
 try:
-    from flatfile_chat_database.prismmind_integration import (
+    from prismmind_integration import (
         FlatfileDocumentProcessor,
         FlatfilePrismMindConfig,
         FlatfilePrismMindConfigLoader

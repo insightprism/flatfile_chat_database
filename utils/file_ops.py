@@ -15,7 +15,7 @@ import platform
 import time
 from datetime import datetime
 
-from flatfile_chat_database.config import StorageConfig
+from config import StorageConfig
 
 
 class FileOperationError(Exception):
@@ -43,17 +43,19 @@ else:
 class FileLock:
     """Cross-platform file lock implementation"""
     
-    def __init__(self, path: Path, timeout: float = 30.0):
+    def __init__(self, path: Path, timeout: float = 30.0, config: Optional[StorageConfig] = None):
         """
         Initialize file lock.
         
         Args:
             path: Path to lock (will use .lock suffix)
             timeout: Maximum time to wait for lock in seconds
+            config: Storage configuration for retry parameters
         """
         self.path = path
         self.lock_path = path.with_suffix(path.suffix + '.lock')
         self.timeout = timeout
+        self.config = config
         self.lock_file = None
         self.is_windows = platform.system() == 'Windows'
         self.acquired_at = None
@@ -69,7 +71,14 @@ class FileLock:
             LockTimeoutError: If lock cannot be acquired within timeout
         """
         start_time = time.time()
-        retry_delay = 0.01  # Start with 10ms
+        
+        # Get retry parameters from config or use defaults
+        if self.config:
+            retry_delay = self.config.lock_retry_delay_ms / 1000.0  # Convert ms to seconds
+            max_delay = self.config.lock_retry_max_delay_seconds
+        else:
+            retry_delay = 0.01  # 10ms default
+            max_delay = 1.0  # 1 second default
         
         while True:
             try:
@@ -103,7 +112,7 @@ class FileLock:
                 
                 # Exponential backoff
                 await asyncio.sleep(retry_delay)
-                retry_delay = min(retry_delay * 2, 1.0)  # Cap at 1 second
+                retry_delay = min(retry_delay * 2, max_delay)
     
     async def release(self):
         """Release file lock"""
@@ -174,7 +183,7 @@ class FileOperationManager:
         async with self._lock_pool:
             if canonical_path not in self._locks:
                 lock_timeout = getattr(self.config, 'lock_timeout_seconds', 30.0)
-                self._locks[canonical_path] = FileLock(canonical_path, timeout=lock_timeout)
+                self._locks[canonical_path] = FileLock(canonical_path, timeout=lock_timeout, config=self.config)
             
             return self._locks[canonical_path]
     
@@ -258,7 +267,8 @@ class FileOperationManager:
         
         # Create temp file in same directory for atomic rename with unique name
         import uuid
-        temp_suffix = f"{self.config.atomic_write_temp_suffix}.{uuid.uuid4().hex[:8]}"
+        uuid_length = self.config.temp_file_suffix_length
+        temp_suffix = f"{self.config.atomic_write_temp_suffix}.{uuid.uuid4().hex[:uuid_length]}"
         temp_path = path.with_suffix(path.suffix + temp_suffix)
         
         try:
@@ -278,7 +288,9 @@ class FileOperationManager:
             await asyncio.get_event_loop().run_in_executor(None, write_data)
             
             # Atomic rename with retry for concurrent access
-            max_retries = 3
+            max_retries = self.config.file_operation_max_retries
+            retry_delay_ms = self.config.file_operation_retry_delay_ms
+            
             for attempt in range(max_retries):
                 try:
                     temp_path.rename(path)
@@ -289,7 +301,9 @@ class FileOperationManager:
                         # The file was successfully written by another process
                         return True
                     if attempt < max_retries - 1:
-                        await asyncio.sleep(0.01 * (attempt + 1))  # Exponential backoff
+                        # Exponential backoff using config values
+                        delay_seconds = (retry_delay_ms * (attempt + 1)) / 1000.0
+                        await asyncio.sleep(delay_seconds)
                     else:
                         raise
             

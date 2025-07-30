@@ -12,10 +12,10 @@ from typing import Dict, List, Tuple, Optional, Any
 import asyncio
 from datetime import datetime
 
-from flatfile_chat_database.utils.file_ops import atomic_write, ensure_directory
-from flatfile_chat_database.utils.json_utils import read_jsonl, append_jsonl
-from flatfile_chat_database.config import StorageConfig
-from flatfile_chat_database.models import VectorSearchResult
+from utils.file_ops import atomic_write, ensure_directory
+from utils.json_utils import read_jsonl, append_jsonl
+from config import StorageConfig
+from models import VectorSearchResult
 
 
 class FlatfileVectorStorage:

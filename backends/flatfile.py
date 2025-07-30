@@ -10,9 +10,9 @@ from typing import Optional, List, Dict, Any
 import asyncio
 from datetime import datetime
 
-from flatfile_chat_database.backends.base import StorageBackend
-from flatfile_chat_database.config import StorageConfig
-from flatfile_chat_database.utils import (
+from backends.base import StorageBackend
+from config import StorageConfig
+from utils import (
     atomic_write, atomic_append, safe_read, ensure_directory, safe_delete,
     file_exists, directory_exists, list_files, get_file_size
 )

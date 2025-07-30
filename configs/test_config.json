@@ -2,7 +2,16 @@
   "flatfile_config": {
     "storage_base_path": "./test_data",
     "default_chunking_strategy": "fixed",
-    "default_embedding_provider": "nomic-ai"
+    "default_embedding_provider": "nomic-ai",
+    "lock_retry_delay_ms": 1,
+    "lock_retry_max_delay_seconds": 0.1,
+    "file_operation_max_retries": 1,
+    "file_operation_retry_delay_ms": 1,
+    "message_id_length": 6,
+    "insight_id_length": 6,
+    "temp_file_suffix_length": 4,
+    "search_min_word_length": 2,
+    "fallback_chunk_size_limit": 100
   },
   "document_processing": {
     "default_processing_chain": [

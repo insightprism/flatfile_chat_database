@@ -2,7 +2,7 @@
 Utility functions for file operations, JSON handling, and path management.
 """
 
-from flatfile_chat_database.utils.file_ops import (
+from utils.file_ops import (
     atomic_write,
     atomic_append,
     safe_read,
@@ -15,7 +15,7 @@ from flatfile_chat_database.utils.file_ops import (
     get_file_operation_manager
 )
 
-from flatfile_chat_database.utils.json_utils import (
+from utils.json_utils import (
     write_json,
     read_json,
     append_jsonl,
@@ -23,7 +23,7 @@ from flatfile_chat_database.utils.json_utils import (
     read_jsonl_paginated
 )
 
-from flatfile_chat_database.utils.path_utils import (
+from utils.path_utils import (
     get_user_path,
     get_session_path,
     get_panel_path,

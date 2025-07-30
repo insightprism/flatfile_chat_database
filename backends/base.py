@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
-from flatfile_chat_database.config import StorageConfig
+from config import StorageConfig
 
 
 class StorageBackend(ABC):

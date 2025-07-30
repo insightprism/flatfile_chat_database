@@ -334,7 +334,7 @@ class FlatfilePrismMindConfigLoader:
                 validation_result["structure_valid"] = True
                 
                 # Run configuration validation
-                from .factory import FlatfilePrismMindConfigFactory
+                from flatfile_chat_database.factory import FlatfilePrismMindConfigFactory
                 config_errors = FlatfilePrismMindConfigFactory.validate_configuration(config)
                 
                 if config_errors:

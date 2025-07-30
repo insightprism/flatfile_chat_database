@@ -1,26 +1,29 @@
 """
 Text Chunking Module for Flatfile Chat Database
 
-Provides multiple text chunking strategies based on PrismMind patterns.
-Supports fixed-size, sentence-based, and optimized chunking.
+Uses PrismMind's proven chunking engine instead of custom implementation.
+Replaced 323 lines of custom logic with direct engine usage.
 """
 
 import asyncio
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
-import spacy
-import re
 
-from flatfile_chat_database.config import StorageConfig
+from config import StorageConfig
 
-
-# SpaCy model cache
-_spacy_model_cache = {}
+# PrismMind Engine Imports
+try:
+    from prismmind.pm_engines.pm_chunking_engine import PmChunkingEngine
+    from prismmind.pm_config.pm_chunking_engine_config import pm_chunking_engine_config_dto
+    PRISMMIND_AVAILABLE = True
+except ImportError:
+    PRISMMIND_AVAILABLE = False
+    print("PrismMind not available. Install PrismMind for full functionality.")
 
 
 @dataclass
 class ChunkingStrategy:
-    """Configuration for a chunking strategy"""
+    """Configuration for a chunking strategy - kept for backward compatibility"""
     chunk_strategy: str
     chunk_size: int = 800
     chunk_overlap: int = 100
@@ -35,11 +38,23 @@ class ChunkingStrategy:
 
 class ChunkingEngine:
     """
-    Text chunking engine with multiple strategies.
-    Based on PrismMind's proven chunking patterns.
+    Text chunking using PrismMind's proven chunking engine.
+    Simplified from 323 lines to ~50 lines of actual logic.
     """
     
-    # Default strategies matching PrismMind
+    # Strategy mapping to PrismMind handlers
+    STRATEGY_HANDLERS = {
+        "optimized_summary": "pm_optimize_chunk_handler_async",
+        "default_fixed": "pm_fixed_chunk_handler_async",
+        "sentence_short": "pm_sentence_chunk_handler_async",
+        "sentence_medium": "pm_sentence_chunk_handler_async",
+        "large_context": "pm_optimize_chunk_handler_async",
+        "optimize": "pm_optimize_chunk_handler_async",
+        "fixed": "pm_fixed_chunk_handler_async",
+        "sentence": "pm_sentence_chunk_handler_async"
+    }
+    
+    # Legacy strategy configs (kept for validation/metadata)
     STRATEGIES = {
         "optimized_summary": ChunkingStrategy(
             chunk_strategy="optimize",
@@ -88,237 +103,156 @@ class ChunkingEngine:
         strategy: str = None,
         custom_config: Optional[Dict[str, Any]] = None
     ) -> List[str]:
-        """
-        Chunk text using specified strategy.
+        """Chunk text using PrismMind engine."""
+        if not PRISMMIND_AVAILABLE:
+            raise RuntimeError("PrismMind is required for text chunking")
         
-        Args:
-            text: Text to chunk
-            strategy: Strategy name (default: "optimized_summary")
-            custom_config: Optional custom configuration
-            
-        Returns:
-            List of text chunks
-        """
         strategy = strategy or self.default_strategy
         
-        if strategy not in self.STRATEGIES and not custom_config:
-            raise ValueError(f"Unknown strategy: {strategy}")
+        # Validate strategy
+        if strategy not in self.STRATEGY_HANDLERS:
+            raise ValueError(f"Unknown strategy: {strategy}. Available: {list(self.STRATEGY_HANDLERS.keys())}")
         
-        strategy_config = custom_config or self.STRATEGIES[strategy]
+        # Get PrismMind handler name
+        handler_name = self.STRATEGY_HANDLERS[strategy]
         
-        if isinstance(strategy_config, dict):
-            strategy_config = ChunkingStrategy(**strategy_config)
+        # Create chunking engine
+        engine = PmChunkingEngine(
+            engine_config=pm_chunking_engine_config_dto(
+                handler_name=handler_name
+            )
+        )
         
-        # Clean text first
-        text = self._clean_text(text)
-        
-        # Route to appropriate handler
-        if strategy_config.chunk_strategy == "fixed":
-            return await self._fixed_chunk(text, strategy_config)
-        elif strategy_config.chunk_strategy == "sentence":
-            return await self._sentence_chunk(text, strategy_config)
-        elif strategy_config.chunk_strategy == "optimize":
-            return await self._optimized_chunk(text, strategy_config)
-        else:
-            raise ValueError(f"Unknown chunk strategy: {strategy_config.chunk_strategy}")
-    
-    async def _fixed_chunk(
-        self, 
-        text: str, 
-        config: ChunkingStrategy
-    ) -> List[str]:
-        """Fixed-size chunking with overlap."""
-        chunks = []
-        start = 0
-        
-        while start < len(text):
-            end = min(start + config.chunk_size, len(text))
-            chunks.append(text[start:end].strip())
+        try:
+            # Process with PrismMind engine
+            result = await engine(text)
             
-            if end == len(text):
-                break
+            # PrismMind returns {"output_content": [...], "success": True, ...}
+            if result.get("success", True):
+                chunks = result["output_content"]
+                # Ensure we return a list of strings
+                if isinstance(chunks, list):
+                    return [str(chunk) for chunk in chunks]
+                else:
+                    return [str(chunks)]
+            else:
+                raise RuntimeError(f"Chunking failed: {result.get('metadata', {}).get('error')}")
                 
-            start = start + config.chunk_size - config.chunk_overlap
-        
-        return [chunk for chunk in chunks if chunk]  # Filter empty chunks
+        except Exception as e:
+            print(f"Error chunking text: {e}")
+            # Fallback to simple splitting
+            return await self._fallback_chunk(text, strategy)
     
-    async def _sentence_chunk(
-        self, 
-        text: str, 
-        config: ChunkingStrategy
-    ) -> List[str]:
-        """Sentence-based chunking using SpaCy."""
-        nlp = await self._get_spacy_model(config.spacy_model_name)
-        doc = nlp(text)
-        sentences = [sent.text.strip() for sent in doc.sents if sent.text.strip()]
+    async def _fallback_chunk(self, text: str, strategy: str) -> List[str]:
+        """Simple fallback chunking when PrismMind is unavailable."""
+        strategy_config = self.STRATEGIES.get(strategy, self.STRATEGIES["default_fixed"])
         
-        if not sentences:
-            return []
-        
-        chunks = []
-        i = 0
-        
-        while i < len(sentences):
-            # Get the chunk sentences
-            end_idx = min(i + config.sentence_per_chunk, len(sentences))
-            chunk_sentences = sentences[i:end_idx]
-            chunk = " ".join(chunk_sentences)
+        if strategy_config.chunk_strategy == "fixed":
+            # Simple character-based chunking
+            chunk_size = strategy_config.chunk_size
+            overlap = strategy_config.chunk_overlap
             
-            if chunk:
-                chunks.append(chunk)
+            chunks = []
+            start = 0
+            while start < len(text):
+                end = min(start + chunk_size, len(text))
+                chunks.append(text[start:end].strip())
+                if end == len(text):
+                    break
+                start = start + chunk_size - overlap
             
-            # Move forward with overlap
-            i += config.sentence_per_chunk - config.sentence_overlap
+            return [chunk for chunk in chunks if chunk]
+        else:
+            # Fallback to simple sentence splitting
+            sentences = text.split('. ')
+            chunks = []
+            current_chunk = ""
             
-            # Ensure we don't get stuck in a loop
-            if i <= 0 and len(chunks) > 0:
-                i = config.sentence_per_chunk
-        
-        return chunks
-    
-    async def _optimized_chunk(
-        self, 
-        text: str, 
-        config: ChunkingStrategy
-    ) -> List[str]:
-        """
-        Optimized chunking using sentence boundaries and token counts.
-        This is the default strategy for best semantic coherence.
-        """
-        nlp = await self._get_spacy_model(config.spacy_model_name)
-        doc = nlp(text)
-        sentences = [sent.text.strip() for sent in doc.sents if sent.text.strip()]
-        
-        if not sentences:
-            return []
-        
-        chunks = []
-        i = 0
-        
-        while i < len(sentences):
-            # Start with target number of sentences
-            sentence_count = config.sentence_per_chunk
-            candidate = sentences[i:i + sentence_count]
-            chunk = " ".join(candidate)
-            token_count = len(chunk.split())
+            for sentence in sentences:
+                # Use configured fallback chunk size limit
+                limit = self.config.fallback_chunk_size_limit
+                if len(current_chunk) + len(sentence) > limit:
+                    if current_chunk:
+                        chunks.append(current_chunk.strip())
+                    current_chunk = sentence
+                else:
+                    if current_chunk:
+                        current_chunk += ". " + sentence
+                    else:
+                        current_chunk = sentence
             
-            # Expand if below minimum
-            while (token_count < config.min_tokens_per_chunk and 
-                   (i + sentence_count) < len(sentences)):
-                sentence_count += 1
-                candidate = sentences[i:i + sentence_count]
-                chunk = " ".join(candidate)
-                token_count = len(chunk.split())
+            if current_chunk:
+                chunks.append(current_chunk.strip())
             
-            # Truncate if above maximum
-            if token_count > config.max_tokens_per_chunk:
-                words = chunk.split()[:config.max_tokens_per_chunk]
-                chunk = " ".join(words)
-            
-            if chunk:
-                chunks.append(chunk)
-            
-            # Move forward with overlap
-            advance = max(1, sentence_count - config.chunk_overlap_sentences)
-            i += advance
-        
-        return chunks
-    
-    async def _get_spacy_model(self, model_name: str = "en_core_web_sm"):
-        """Get or load SpaCy model with caching."""
-        if model_name not in _spacy_model_cache:
-            try:
-                _spacy_model_cache[model_name] = spacy.load(model_name)
-            except OSError:
-                # Model not installed, use a simple fallback
-                print(f"SpaCy model '{model_name}' not found. Using simple sentence splitting.")
-                return None
-        return _spacy_model_cache[model_name]
-    
-    def _clean_text(self, text: str) -> str:
-        """Clean text before chunking."""
-        # Remove excessive whitespace
-        text = re.sub(r'\s+', ' ', text)
-        # Remove leading/trailing whitespace
-        text = text.strip()
-        return text
+            return chunks
     
     async def chunk_with_metadata(
-        self,
-        text: str,
+        self, 
+        text: str, 
         strategy: str = None,
         document_id: str = None,
         custom_config: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
-        """
-        Chunk text and return chunks with metadata.
-        
-        Returns:
-            List of dictionaries containing chunk text and metadata
-        """
+        """Chunk text and return with metadata."""
         chunks = await self.chunk_text(text, strategy, custom_config)
         
-        result = []
-        for i, chunk in enumerate(chunks):
-            chunk_metadata = {
+        strategy = strategy or self.default_strategy
+        metadata = {
+            "strategy": strategy,
+            "document_id": document_id,
+            "total_chunks": len(chunks),
+            "chunking_engine": "prismmind"
+        }
+        
+        return [
+            {
+                "chunk_id": f"{document_id}_{i}" if document_id else f"chunk_{i}",
                 "chunk_text": chunk,
                 "chunk_index": i,
-                "total_chunks": len(chunks),
-                "document_id": document_id,
-                "strategy": strategy or self.default_strategy,
-                "char_count": len(chunk),
-                "word_count": len(chunk.split()),
-                "position": {
-                    "start": text.find(chunk),
-                    "end": text.find(chunk) + len(chunk)
-                }
+                "metadata": {**metadata, "chunk_index": i}
             }
-            result.append(chunk_metadata)
-        
-        return result
+            for i, chunk in enumerate(chunks)
+        ]
     
-    async def estimate_chunks(
-        self,
-        text: str,
-        strategy: str = None
-    ) -> int:
-        """
-        Estimate the number of chunks without actually chunking.
-        Useful for planning and progress indication.
-        """
+    async def estimate_chunks(self, text: str, strategy: str = None) -> int:
+        """Estimate number of chunks for given text and strategy."""
         strategy = strategy or self.default_strategy
-        strategy_config = self.STRATEGIES.get(strategy)
-        
-        if not strategy_config:
-            return 0
+        strategy_config = self.STRATEGIES.get(strategy, self.STRATEGIES["default_fixed"])
         
         if strategy_config.chunk_strategy == "fixed":
-            # Simple calculation for fixed chunks
-            chunk_size = strategy_config.chunk_size
-            overlap = strategy_config.chunk_overlap
-            text_len = len(text)
-            
-            if text_len <= chunk_size:
-                return 1
-            
-            # Account for overlap
-            effective_chunk_size = chunk_size - overlap
-            return ((text_len - chunk_size) // effective_chunk_size) + 1
-        
-        elif strategy_config.chunk_strategy in ["sentence", "optimize"]:
-            # Rough estimate based on average sentence length
-            # Assuming average sentence is ~20 words, ~100 characters
-            estimated_sentences = len(text) // 100
-            if estimated_sentences == 0:
-                return 1
-            
+            return max(1, len(text) // strategy_config.chunk_size)
+        else:
+            # Rough estimate based on sentences
+            sentence_count = len(text.split('. '))
             sentences_per_chunk = strategy_config.sentence_per_chunk
-            overlap = strategy_config.sentence_overlap if hasattr(strategy_config, 'sentence_overlap') else 0
-            
-            if overlap >= sentences_per_chunk:
-                overlap = sentences_per_chunk - 1
-            
-            effective_sentences_per_chunk = sentences_per_chunk - overlap
-            return max(1, (estimated_sentences // effective_sentences_per_chunk))
-        
-        return 1  # Default to at least one chunk
+            return max(1, sentence_count // sentences_per_chunk)
+
+
+# Simplified convenience functions
+async def chunk_text(text: str, strategy: str = "optimized_summary") -> List[str]:
+    """Chunk text using PrismMind engine - simplified interface."""
+    if not PRISMMIND_AVAILABLE:
+        raise RuntimeError("PrismMind is required for text chunking")
+    
+    # Strategy to handler mapping
+    handler_map = {
+        "optimized_summary": "pm_optimize_chunk_handler_async",
+        "optimize": "pm_optimize_chunk_handler_async",
+        "fixed": "pm_fixed_chunk_handler_async",
+        "sentence": "pm_sentence_chunk_handler_async"
+    }
+    
+    handler_name = handler_map.get(strategy, "pm_optimize_chunk_handler_async")
+    
+    engine = PmChunkingEngine(
+        engine_config=pm_chunking_engine_config_dto(
+            handler_name=handler_name
+        )
+    )
+    
+    result = await engine(text)
+    if result.get("success", True):
+        chunks = result["output_content"]
+        return [str(chunk) for chunk in chunks] if isinstance(chunks, list) else [str(chunks)]
+    else:
+        return [text]  # Fallback to original text

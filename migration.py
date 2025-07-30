@@ -13,11 +13,11 @@ from dataclasses import dataclass
 import sqlite3
 from abc import ABC, abstractmethod
 
-from flatfile_chat_database.config import StorageConfig
-from flatfile_chat_database.storage import StorageManager
-from flatfile_chat_database.models import Message, Session, Document, SituationalContext, UserProfile
-from flatfile_chat_database.streaming import ExportStreamer, StreamConfig
-from flatfile_chat_database.compression import CompressionManager, CompressionConfig, CompressionType
+from config import StorageConfig
+from storage import StorageManager
+from models import Message, Session, Document, SituationalContext, UserProfile
+from streaming import ExportStreamer, StreamConfig
+from compression import CompressionManager, CompressionConfig, CompressionType
 
 
 @dataclass
