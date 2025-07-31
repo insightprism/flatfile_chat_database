@@ -6,11 +6,11 @@ Handles configuration for file storage, paths, limits, and behaviors.
 
 from dataclasses import dataclass, field
 from typing import List, Optional
-from .ff_base_config import FFBaseConfig, validate_positive, validate_non_empty
+from .ff_base_config import FFBaseConfigDTO, validate_positive, validate_non_empty
 
 
 @dataclass
-class FFStorageConfig(FFBaseConfig):
+class FFStorageConfigDTO(FFBaseConfigDTO):
     """
     Core storage configuration.
     

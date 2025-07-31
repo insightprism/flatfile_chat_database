@@ -58,7 +58,7 @@ except ImportError:
     
     PRISMMIND_AVAILABLE = False
 
-from .ff_prismmind_config import FFPrismMindConfig
+from .ff_prismmind_config import FFPrismMindConfigDTO
 
 
 class FFPrismMindConfigFactory:
@@ -67,7 +67,7 @@ class FFPrismMindConfigFactory:
     @staticmethod
     def create_injest_engine_config(
         file_type: str,
-        config: FFPrismMindConfig
+        config: FFPrismMindConfigDTO
     ) -> Tuple[pm_injest_engine_config_dto, pm_injest_handler_config_dto]:
         """
         Create PrismMind injest engine config from flatfile config.
@@ -100,7 +100,7 @@ class FFPrismMindConfigFactory:
     
     @staticmethod
     def create_nlp_engine_config(
-        config: FFPrismMindConfig,
+        config: FFPrismMindConfigDTO,
         strategy_override: Optional[str] = None
     ) -> pm_nlp_engine_config_dto:
         """
@@ -135,7 +135,7 @@ class FFPrismMindConfigFactory:
     
     @staticmethod
     def create_chunking_engine_config(
-        config: FFPrismMindConfig,
+        config: FFPrismMindConfigDTO,
         strategy_override: Optional[str] = None
     ) -> Tuple[pm_chunking_engine_config_dto, pm_chunking_handler_config_dto]:
         """
@@ -180,7 +180,7 @@ class FFPrismMindConfigFactory:
     def create_embedding_engine_config_with_storage(
         embedding_provider: str,
         storage_metadata: Dict[str, Any],
-        config: FFPrismMindConfig,
+        config: FFPrismMindConfigDTO,
         provider_override: Optional[str] = None
     ) -> Tuple[pm_embedding_engine_config_dto, pm_embedding_handler_config_dto]:
         """
@@ -228,7 +228,7 @@ class FFPrismMindConfigFactory:
     @staticmethod
     def create_standard_embedding_engine_config(
         embedding_provider: str,
-        config: FFPrismMindConfig,
+        config: FFPrismMindConfigDTO,
         provider_override: Optional[str] = None
     ) -> Tuple[pm_embedding_engine_config_dto, pm_embedding_handler_config_dto]:
         """
@@ -282,7 +282,7 @@ class FFPrismMindConfigFactory:
         user_id: str,
         session_id: str,
         document_id: str,
-        config: FFPrismMindConfig,
+        config: FFPrismMindConfigDTO,
         strategy_overrides: Optional[Dict[str, str]] = None
     ) -> List[PmBaseEngine]:
         """
@@ -386,7 +386,7 @@ class FFPrismMindConfigFactory:
     @staticmethod
     def create_engine_by_name(
         engine_name: str,
-        config: FFPrismMindConfig,
+        config: FFPrismMindConfigDTO,
         **kwargs
     ) -> PmBaseEngine:
         """

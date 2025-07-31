@@ -12,8 +12,8 @@ from datetime import datetime
 import warnings
 
 from ff_storage_manager import FFStorageManager
-from ff_config_legacy_adapter import StorageConfig
-from ff_class_configs.ff_chat_entities_config import FFDocument, FFProcessingResult
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO, load_config
+from ff_class_configs.ff_chat_entities_config import FFDocumentDTO, FFProcessingResult
 
 # Import PrismMind integration
 try:
@@ -44,7 +44,7 @@ class FFDocumentProcessingManager:
     - Better error handling and performance
     """
     
-    def __init__(self, config: Optional[StorageConfig] = None, use_prismmind: bool = True):
+    def __init__(self, config: Optional[FFConfigurationManagerConfigDTO] = None, use_prismmind: bool = True):
         """
         Initialize pipeline with optional PrismMind integration.
         
@@ -52,12 +52,12 @@ class FFDocumentProcessingManager:
             config: Storage configuration
             use_prismmind: Whether to use PrismMind integration (recommended)
         """
-        self.config = config or StorageConfig()
+        self.config = config or load_config()
         self.storage = FFStorageManager(self.config)
         
         # Default settings (legacy)
-        self.chunking_strategy = self.config.default_chunking_strategy
-        self.embedding_provider = self.config.default_embedding_provider
+        self.chunking_strategy = self.config.vector.default_chunking_strategy
+        self.embedding_provider = self.config.vector.default_embedding_provider
         
         # PrismMind integration
         self.use_prismmind = use_prismmind and PRISMMIND_INTEGRATION_AVAILABLE

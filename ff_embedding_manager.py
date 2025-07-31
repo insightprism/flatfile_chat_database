@@ -9,7 +9,7 @@ import asyncio
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
 
 # PrismMind Engine Imports
 try:
@@ -22,7 +22,7 @@ except ImportError:
 
 
 @dataclass
-class FFEmbeddingProvider:
+class FFEmbeddingProviderDTO:
     """Configuration for an embedding provider"""
     model_name: str
     embedding_dimension: int
@@ -38,25 +38,25 @@ class FFEmbeddingManager:
     
     # Provider configurations (used for validation and metadata)
     PROVIDERS = {
-        "nomic-ai": FFEmbeddingProvider(
+        "nomic-ai": FFEmbeddingProviderDTO(
             model_name="nomic-ai/nomic-embed-text-v1",
             embedding_dimension=768,
             requires_api_key=False,
             normalize_vectors=True
         ),
-        "openai": FFEmbeddingProvider(
+        "openai": FFEmbeddingProviderDTO(
             model_name="text-embedding-ada-002",
             embedding_dimension=1536,
             requires_api_key=True,
             normalize_vectors=True
         ),
-        "openai-3-small": FFEmbeddingProvider(
+        "openai-3-small": FFEmbeddingProviderDTO(
             model_name="text-embedding-3-small",
             embedding_dimension=1536,
             requires_api_key=True,
             normalize_vectors=True
         ),
-        "openai-3-large": FFEmbeddingProvider(
+        "openai-3-large": FFEmbeddingProviderDTO(
             model_name="text-embedding-3-large",
             embedding_dimension=3072,
             requires_api_key=True,
@@ -64,9 +64,9 @@ class FFEmbeddingManager:
         )
     }
     
-    def __init__(self, config: StorageConfig):
+    def __init__(self, config: FFConfigurationManagerConfigDTO):
         self.config = config
-        self.default_provider = config.default_embedding_provider
+        self.default_provider = config.vector.default_embedding_provider
     
     async def ff_generate_embeddings(
         self,

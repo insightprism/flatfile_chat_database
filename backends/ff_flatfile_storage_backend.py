@@ -12,7 +12,7 @@ import asyncio
 from datetime import datetime
 
 from backends.ff_storage_backend_base import FFStorageBackendBase
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
 from ff_utils import (
     ff_atomic_write, ff_atomic_append, ff_safe_read, ff_ensure_directory, ff_safe_delete,
     ff_file_exists, ff_directory_exists, ff_list_files, ff_get_file_size
@@ -26,7 +26,7 @@ class FFFlatfileStorageBackend(FFStorageBackendBase):
     Stores data as files on the filesystem with the key as the file path.
     """
     
-    def __init__(self, config: StorageConfig):
+    def __init__(self, config: FFConfigurationManagerConfigDTO):
         """
         Initialize flatfile backend.
         
@@ -34,7 +34,7 @@ class FFFlatfileStorageBackend(FFStorageBackendBase):
             config: Storage configuration
         """
         super().__init__(config)
-        self.base_path = Path(config.storage_base_path).resolve()
+        self.base_path = Path(config.storage.base_path).resolve()
     
     async def initialize(self) -> bool:
         """
@@ -48,9 +48,9 @@ class FFFlatfileStorageBackend(FFStorageBackendBase):
             
             # Create standard subdirectories from config
             subdirs = [
-                self.config.global_personas_directory_name,
-                self.config.panel_sessions_directory_name,
-                self.config.system_config_directory_name
+                self.config.panel.global_personas_directory,
+                self.config.panel.panel_sessions_directory,
+                self.config.storage.system_config_directory
             ]
             
             for subdir in subdirs:

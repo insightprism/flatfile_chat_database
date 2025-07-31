@@ -6,11 +6,11 @@ Manages concurrent access control and locking strategies.
 
 from dataclasses import dataclass, field
 from typing import List, Optional
-from .ff_base_config import FFBaseConfig, validate_positive, validate_range
+from .ff_base_config import FFBaseConfigDTO, validate_positive, validate_range
 
 
 @dataclass
-class FFLockingConfig(FFBaseConfig):
+class FFLockingConfigDTO(FFBaseConfigDTO):
     """
     File locking configuration.
     

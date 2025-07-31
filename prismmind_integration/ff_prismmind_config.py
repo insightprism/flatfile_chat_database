@@ -13,7 +13,7 @@ from ..config import StorageConfig
 
 
 @dataclass
-class FFDocumentProcessingConfig:
+class FFDocumentProcessingConfigDTO:
     """Configuration for document processing workflows"""
     
     # Processing chain definition (no hard-coding!)
@@ -97,7 +97,7 @@ class FFDocumentProcessingConfig:
 
 
 @dataclass
-class FFEngineSelectionConfig:
+class FFEngineSelectionConfigDTO:
     """Configuration for engine and handler selection"""
     
     # File type to handler mapping (completely configurable)
@@ -145,7 +145,7 @@ class FFEngineSelectionConfig:
 
 
 @dataclass
-class FFHandlerStrategiesConfig:
+class FFHandlerStrategiesConfigDTO:
     """Configuration for handler strategies and parameters"""
     
     # Default strategies (no magic strings!)
@@ -255,7 +255,7 @@ class FFHandlerStrategiesConfig:
 
 
 @dataclass  
-class FFIntegrationConfig:
+class FFIntegrationConfigDTO:
     """Configuration for PrismMind-Flatfile integration"""
     
     # Storage integration settings
@@ -298,30 +298,30 @@ class FFIntegrationConfig:
 
 
 @dataclass
-class FFPrismMindConfig:
+class FFPrismMindConfigDTO:
     """Master configuration combining flatfile and PrismMind settings"""
     
     # Flatfile storage configuration
     flatfile_config: StorageConfig
     
     # Document processing configuration
-    document_processing: FFDocumentProcessingConfig = field(
-        default_factory=FFDocumentProcessingConfig
+    document_processing: FFDocumentProcessingConfigDTO = field(
+        default_factory=FFDocumentProcessingConfigDTO
     )
     
     # Engine selection configuration
-    engine_selection: FFEngineSelectionConfig = field(
-        default_factory=FFEngineSelectionConfig
+    engine_selection: FFEngineSelectionConfigDTO = field(
+        default_factory=FFEngineSelectionConfigDTO
     )
     
     # Handler strategy configuration
-    handler_strategies: FFHandlerStrategiesConfig = field(
-        default_factory=FFHandlerStrategiesConfig
+    handler_strategies: FFHandlerStrategiesConfigDTO = field(
+        default_factory=FFHandlerStrategiesConfigDTO
     )
     
     # Integration configuration
-    integration_settings: FFIntegrationConfig = field(
-        default_factory=FFIntegrationConfig
+    integration_settings: FFIntegrationConfigDTO = field(
+        default_factory=FFIntegrationConfigDTO
     )
     
     # Environment settings

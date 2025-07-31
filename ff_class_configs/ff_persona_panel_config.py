@@ -6,11 +6,11 @@ Manages multi-persona panels, insights, and collaboration settings.
 
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
-from .ff_base_config import FFBaseConfig, validate_positive, validate_range
+from .ff_base_config import FFBaseConfigDTO, validate_positive, validate_range
 
 
 @dataclass
-class FFPersonaPanelConfig(FFBaseConfig):
+class FFPersonaPanelConfigDTO(FFBaseConfigDTO):
     """
     Panel and persona configuration.
     

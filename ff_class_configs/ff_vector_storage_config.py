@@ -6,11 +6,11 @@ Manages vector search, embeddings, and chunking strategies.
 
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
-from .ff_base_config import FFBaseConfig, validate_positive, validate_range, validate_non_empty
+from .ff_base_config import FFBaseConfigDTO, validate_positive, validate_range, validate_non_empty
 
 
 @dataclass
-class FFVectorStorageConfig(FFBaseConfig):
+class FFVectorStorageConfigDTO(FFBaseConfigDTO):
     """
     Vector storage and embedding configuration.
     

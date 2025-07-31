@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
 
 
 class FFStorageBackendBase(ABC):
@@ -20,7 +20,7 @@ class FFStorageBackendBase(ABC):
     compatibility with the FFStorageManager.
     """
     
-    def __init__(self, config: StorageConfig):
+    def __init__(self, config: FFConfigurationManagerConfigDTO):
         """
         Initialize backend with configuration.
         
@@ -270,11 +270,11 @@ class FFStorageBackendBase(ABC):
             "healthy": True,
             "backend_type": self.__class__.__name__,
             "config": {
-                "base_path": self.config.storage_base_path,
-                "max_document_size": self.config.max_document_size_bytes
+                "base_path": self.config.storage.base_path,
+                "max_document_size": self.config.storage.max_document_size_bytes
             }
         }
     
     def __repr__(self) -> str:
         """String representation of backend"""
-        return f"{self.__class__.__name__}(base_path={self.config.storage_base_path})"
+        return f"{self.__class__.__name__}(base_path={self.config.storage.base_path})"

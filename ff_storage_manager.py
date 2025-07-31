@@ -10,11 +10,11 @@ from typing import Dict, List, Optional, Any, Union
 from datetime import datetime
 import uuid
 
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO, load_config
 from backends import StorageBackend, FlatfileBackend
 from ff_class_configs.ff_chat_entities_config import (
-    FFMessage, FFSession, FFPanel, FFSituationalContext, FFDocument,
-    FFUserProfile, FFPersona, FFPanelMessage, FFPanelInsight
+    FFMessageDTO, FFSessionDTO, FFPanelDTO, FFSituationalContextDTO, FFDocumentDTO,
+    FFUserProfileDTO, FFPersonaDTO, FFPanelMessageDTO, FFPanelInsightDTO
 )
 from ff_utils import (
     ff_write_json, ff_read_json, ff_append_jsonl, ff_read_jsonl, ff_read_jsonl_paginated,
@@ -26,7 +26,7 @@ from ff_utils import (
     ff_get_user_key, ff_get_session_key, ff_get_profile_key, ff_get_messages_key,
     ff_get_session_metadata_key
 )
-from ff_search_manager import FFSearchManager, SearchQuery, SearchResult
+from ff_search_manager import FFSearchManager, FFSearchQueryDTO, FFSearchResultDTO
 from ff_vector_storage_manager import FFVectorStorageManager
 from ff_chunking_manager import FFChunkingManager
 from ff_embedding_manager import FFEmbeddingManager
@@ -54,7 +54,7 @@ class FFStorageManager:
     abstracting away the underlying storage backend.
     """
     
-    def __init__(self, config: Optional[StorageConfig] = None, 
+    def __init__(self, config: Optional[FFConfigurationManagerConfigDTO] = None, 
                  backend: Optional[StorageBackend] = None,
                  enable_prismmind: bool = True):
         """
@@ -65,9 +65,9 @@ class FFStorageManager:
             backend: Storage backend (uses FlatfileBackend if not provided)
             enable_prismmind: Whether to enable PrismMind integration
         """
-        self.config = config or StorageConfig()
+        self.config = config or load_config()
         self.backend = backend or FlatfileBackend(self.config)
-        self.base_path = Path(self.config.storage_base_path)
+        self.base_path = Path(self.config.storage.base_path)
         self._initialized = False
         self.search_engine = FFSearchManager(self.config)
         
@@ -129,7 +129,7 @@ class FFStorageManager:
             return False
         
         # Create user profile
-        user_profile = FFUserProfile(
+        user_profile = FFUserProfileDTO(
             user_id=user_id,
             username=profile.get("username", "") if profile else "",
             preferences=profile.get("preferences", {}) if profile else {},
@@ -172,7 +172,7 @@ class FFStorageManager:
             return False
         
         # Update profile
-        profile = FFUserProfile.from_dict(profile_data)
+        profile = FFUserProfileDTO.from_dict(profile_data)
         
         # Update fields
         if "username" in updates:
@@ -188,12 +188,12 @@ class FFStorageManager:
         profile_key = ff_get_profile_key(self.base_path, user_id, self.config)
         return await self._write_json(profile_key, profile.to_dict())
     
-    async def store_user_profile(self, profile: FFUserProfile) -> bool:
+    async def store_user_profile(self, profile: FFUserProfileDTO) -> bool:
         """
         Store a user profile object directly.
         
         Args:
-            profile: FFUserProfile object to store
+            profile: FFUserProfileDTO object to store
             
         Returns:
             True if successful
@@ -280,7 +280,7 @@ class FFStorageManager:
         session_id = ff_generate_session_id(self.config)
         
         # Create session object
-        session = FFSession(
+        session = FFSessionDTO(
             session_id=session_id,
             user_id=user_id,
             title=title or "New Chat"
@@ -294,7 +294,7 @@ class FFStorageManager:
         
         return ""
     
-    async def get_session(self, user_id: str, session_id: str) -> Optional[FFSession]:
+    async def get_session(self, user_id: str, session_id: str) -> Optional[FFSessionDTO]:
         """
         Get session metadata.
         
@@ -309,7 +309,7 @@ class FFStorageManager:
         session_data = await self._read_json(session_key)
         
         if session_data:
-            return FFSession.from_dict(session_data)
+            return FFSessionDTO.from_dict(session_data)
         
         return None
     
@@ -368,7 +368,7 @@ class FFStorageManager:
         return await self.update_session(user_id, session_id, {"metadata": metadata})
     
     async def list_sessions(self, user_id: str, limit: Optional[int] = None, 
-                          offset: int = 0) -> List[FFSession]:
+                          offset: int = 0) -> List[FFSessionDTO]:
         """
         List user's sessions with pagination.
         
@@ -378,7 +378,7 @@ class FFStorageManager:
             offset: Number of sessions to skip
             
         Returns:
-            List of FFSession objects
+            List of FFSessionDTO objects
         """
         user_key = ff_get_user_key(self.base_path, user_id, self.config)
         
@@ -391,7 +391,7 @@ class FFStorageManager:
         session_keys.sort(reverse=True)
         
         # Apply pagination
-        limit = limit or self.config.session_list_default_limit
+        limit = limit or self.config.search.default_page_size
         paginated_keys = session_keys[offset:offset + limit]
         
         # Load session metadata
@@ -399,7 +399,7 @@ class FFStorageManager:
         for key in paginated_keys:
             session_data = await self._read_json(key)
             if session_data:
-                sessions.append(FFSession.from_dict(session_data))
+                sessions.append(FFSessionDTO.from_dict(session_data))
         
         return sessions
     
@@ -422,7 +422,7 @@ class FFStorageManager:
     
     # === Message Management ===
     
-    async def add_message(self, user_id: str, session_id: str, message: FFMessage) -> bool:
+    async def add_message(self, user_id: str, session_id: str, message: FFMessageDTO) -> bool:
         """
         Add message to session.
         
@@ -438,8 +438,8 @@ class FFStorageManager:
         message_json = message.to_dict()
         message_size = len(str(message_json).encode('utf-8'))
         
-        if message_size > self.config.max_message_size_bytes:
-            print(f"Message size {message_size} exceeds limit {self.config.max_message_size_bytes}")
+        if message_size > self.config.storage.max_message_size_bytes:
+            print(f"Message size {message_size} exceeds limit {self.config.storage.max_message_size_bytes}")
             return False
         
         # Get messages file path
@@ -462,7 +462,7 @@ class FFStorageManager:
         return success
     
     async def get_messages(self, user_id: str, session_id: str, 
-                         limit: Optional[int] = None, offset: int = 0) -> List[FFMessage]:
+                         limit: Optional[int] = None, offset: int = 0) -> List[FFMessageDTO]:
         """
         Get messages with pagination.
         
@@ -473,27 +473,27 @@ class FFStorageManager:
             offset: Number of messages to skip
             
         Returns:
-            List of FFMessage objects
+            List of FFMessageDTO objects
         """
         messages_key = ff_get_messages_key(self.base_path, user_id, session_id, self.config)
         messages_path = self.base_path / messages_key
         
         # Read messages with pagination
-        limit = limit or self.config.message_pagination_default_limit
+        limit = limit or self.config.search.default_page_size
         messages_data = await ff_read_jsonl(messages_path, self.config, limit=limit, offset=offset)
         
-        # Convert to FFMessage objects
+        # Convert to FFMessageDTO objects
         messages = []
         for data in messages_data:
             try:
-                messages.append(FFMessage.from_dict(data))
+                messages.append(FFMessageDTO.from_dict(data))
             except Exception as e:
                 print(f"Failed to parse message: {e}")
                 continue
         
         return messages
     
-    async def get_all_messages(self, user_id: str, session_id: str) -> List[FFMessage]:
+    async def get_all_messages(self, user_id: str, session_id: str) -> List[FFMessageDTO]:
         """
         Get all messages in a session.
         
@@ -502,13 +502,13 @@ class FFStorageManager:
             session_id: Session identifier
             
         Returns:
-            List of all FFMessage objects
+            List of all FFMessageDTO objects
         """
         return await self.get_messages(user_id, session_id, limit=None)
     
     async def search_messages(self, user_id: str, query: str, 
                             session_id: Optional[str] = None,
-                            session_ids: Optional[List[str]] = None) -> List[FFMessage]:
+                            session_ids: Optional[List[str]] = None) -> List[FFMessageDTO]:
         """
         Search messages across sessions.
         
@@ -544,11 +544,11 @@ class FFStorageManager:
                     matching_messages.append(msg)
         
         # Limit results
-        return matching_messages[:self.config.search_results_default_limit]
+        return matching_messages[:self.config.search.default_limit]
     
     # === Advanced Search Methods ===
     
-    async def advanced_search(self, query: SearchQuery) -> List[SearchResult]:
+    async def advanced_search(self, query: FFSearchQueryDTO) -> List[FFSearchResultDTO]:
         """
         Execute advanced search with multiple filters and ranking.
         
@@ -562,7 +562,7 @@ class FFStorageManager:
     
     async def search_by_entities(self, entities: Dict[str, List[str]], 
                                 user_id: Optional[str] = None,
-                                limit: int = 100) -> List[SearchResult]:
+                                limit: int = 100) -> List[FFSearchResultDTO]:
         """
         Search for content containing specific entities.
         
@@ -579,7 +579,7 @@ class FFStorageManager:
     async def search_by_time_range(self, start_date: datetime, end_date: datetime,
                                   user_id: Optional[str] = None,
                                   query_text: Optional[str] = None,
-                                  limit: int = 100) -> List[SearchResult]:
+                                  limit: int = 100) -> List[FFSearchResultDTO]:
         """
         Search within a specific time range.
         
@@ -656,13 +656,13 @@ class FFStorageManager:
             Document ID or empty string if failed
         """
         # Check document size
-        if len(content) > self.config.max_document_size_bytes:
-            print(f"Document size {len(content)} exceeds limit {self.config.max_document_size_bytes}")
+        if len(content) > self.config.storage.max_document_size_bytes:
+            print(f"Document size {len(content)} exceeds limit {self.config.storage.max_document_size_bytes}")
             return ""
         
         # Check file extension
         ext = Path(filename).suffix.lower()
-        if ext not in self.config.allowed_document_extensions:
+        if ext not in self.config.document.allowed_extensions:
             print(f"File extension {ext} not allowed")
             return ""
         
@@ -682,7 +682,7 @@ class FFStorageManager:
             return ""
         
         # Create document metadata
-        document = FFDocument(
+        document = FFDocumentDTO(
             filename=doc_id,
             original_name=filename,
             path=doc_key,
@@ -693,7 +693,7 @@ class FFStorageManager:
         )
         
         # Update document metadata file
-        metadata_path = doc_dir / self.config.document_metadata_filename
+        metadata_path = doc_dir / self.config.document.metadata_filename
         metadata_key = str(metadata_path.relative_to(self.base_path))
         
         # Load existing metadata
@@ -727,7 +727,7 @@ class FFStorageManager:
         doc_key = str(doc_path.relative_to(self.base_path))
         return await self.backend.read(doc_key)
     
-    async def list_documents(self, user_id: str, session_id: str) -> List[FFDocument]:
+    async def list_documents(self, user_id: str, session_id: str) -> List[FFDocumentDTO]:
         """
         List all documents in session.
         
@@ -736,12 +736,12 @@ class FFStorageManager:
             session_id: Session identifier
             
         Returns:
-            List of FFDocument objects
+            List of FFDocumentDTO objects
         """
         safe_user_id = ff_sanitize_filename(user_id)
         session_path = ff_get_session_path(self.base_path, safe_user_id, session_id)
         doc_dir = ff_get_documents_path(session_path, self.config)
-        metadata_path = doc_dir / self.config.document_metadata_filename
+        metadata_path = doc_dir / self.config.document.metadata_filename
         
         metadata_key = str(metadata_path.relative_to(self.base_path))
         docs_metadata = await self._read_json(metadata_key) or {}
@@ -749,7 +749,7 @@ class FFStorageManager:
         documents = []
         for doc_data in docs_metadata.values():
             try:
-                documents.append(FFDocument.from_dict(doc_data))
+                documents.append(FFDocumentDTO.from_dict(doc_data))
             except Exception as e:
                 print(f"Failed to parse document metadata: {e}")
                 continue
@@ -773,7 +773,7 @@ class FFStorageManager:
         safe_user_id = ff_sanitize_filename(user_id)
         session_path = ff_get_session_path(self.base_path, safe_user_id, session_id)
         doc_dir = ff_get_documents_path(session_path, self.config)
-        metadata_path = doc_dir / self.config.document_metadata_filename
+        metadata_path = doc_dir / self.config.document.metadata_filename
         
         metadata_key = str(metadata_path.relative_to(self.base_path))
         docs_metadata = await self._read_json(metadata_key) or {}
@@ -782,7 +782,7 @@ class FFStorageManager:
             return False
         
         # Update document analysis
-        doc = FFDocument.from_dict(docs_metadata[document_id])
+        doc = FFDocumentDTO.from_dict(docs_metadata[document_id])
         doc.add_analysis("analysis", analysis)
         docs_metadata[document_id] = doc.to_dict()
         
@@ -847,8 +847,8 @@ class FFStorageManager:
             
             # Store vectors
             vector_metadata = {
-                "provider": embedding_provider or self.config.default_embedding_provider,
-                "chunking_strategy": chunking_strategy or self.config.default_chunking_strategy,
+                "provider": embedding_provider or self.config.vector.default_embedding_provider,
+                "chunking_strategy": chunking_strategy or self.config.vector.default_chunking_strategy,
                 "document_id": document_id,
                 "chunk_count": len(chunks)
             }
@@ -876,7 +876,7 @@ class FFStorageManager:
         threshold: float = 0.7,
         embedding_provider: str = None,
         api_key: Optional[str] = None
-    ) -> List[SearchResult]:
+    ) -> List[FFSearchResultDTO]:
         """
         Perform vector similarity search across sessions.
         
@@ -918,9 +918,9 @@ class FFStorageManager:
                     threshold=threshold
                 )
                 
-                # Convert to SearchResult format
+                # Convert to FFSearchResult format
                 for r in results:
-                    search_result = SearchResult(
+                    search_result = FFSearchResultDTO(
                         id=r.chunk_id,
                         type="vector_chunk",
                         content=r.chunk_text,
@@ -953,7 +953,7 @@ class FFStorageManager:
         top_k: int = 10,
         vector_weight: float = 0.5,
         **kwargs
-    ) -> List[SearchResult]:
+    ) -> List[FFSearchResultDTO]:
         """
         Perform hybrid search combining text and vector search.
         
@@ -969,7 +969,7 @@ class FFStorageManager:
             Combined and re-ranked results
         """
         # Perform text search
-        search_query = SearchQuery(
+        search_query = FFSearchQueryDTO(
             query=query,
             user_id=user_id,
             session_ids=session_ids,
@@ -1056,7 +1056,7 @@ class FFStorageManager:
     # === Context Management ===
     
     async def update_context(self, user_id: str, session_id: str, 
-                           context: FFSituationalContext) -> bool:
+                           context: FFSituationalContextDTO) -> bool:
         """
         Update current situational context.
         
@@ -1075,7 +1075,7 @@ class FFStorageManager:
         context_key = str(paths["situational_context"].relative_to(self.base_path))
         return await self._write_json(context_key, context.to_dict())
     
-    async def get_context(self, user_id: str, session_id: str) -> Optional[FFSituationalContext]:
+    async def get_context(self, user_id: str, session_id: str) -> Optional[FFSituationalContextDTO]:
         """
         Get current context.
         
@@ -1084,7 +1084,7 @@ class FFStorageManager:
             session_id: Session identifier
             
         Returns:
-            FFSituationalContext or None
+            FFSituationalContextDTO or None
         """
         safe_user_id = ff_sanitize_filename(user_id)
         session_path = ff_get_session_path(self.base_path, safe_user_id, session_id)
@@ -1094,12 +1094,12 @@ class FFStorageManager:
         context_data = await self._read_json(context_key)
         
         if context_data:
-            return FFSituationalContext.from_dict(context_data)
+            return FFSituationalContextDTO.from_dict(context_data)
         
         return None
     
     async def save_context_snapshot(self, user_id: str, session_id: str,
-                                  context: FFSituationalContext) -> bool:
+                                  context: FFSituationalContextDTO) -> bool:
         """
         Save context to history.
         
@@ -1123,7 +1123,7 @@ class FFStorageManager:
         return await self._write_json(snapshot_key, context.to_dict())
     
     async def get_context_history(self, user_id: str, session_id: str,
-                                limit: Optional[int] = None) -> List[FFSituationalContext]:
+                                limit: Optional[int] = None) -> List[FFSituationalContextDTO]:
         """
         Get context evolution history.
         
@@ -1156,7 +1156,7 @@ class FFStorageManager:
             context_data = await self._read_json(key)
             if context_data:
                 try:
-                    contexts.append(FFSituationalContext.from_dict(context_data))
+                    contexts.append(FFSituationalContextDTO.from_dict(context_data))
                 except Exception as e:
                     print(f"Failed to parse context snapshot: {e}")
                     continue
@@ -1179,20 +1179,20 @@ class FFStorageManager:
             Panel ID or empty string if failed
         """
         # Validate personas count
-        if len(personas) > self.config.panel_max_personas:
-            print(f"Too many personas: {len(personas)} > {self.config.panel_max_personas}")
+        if len(personas) > self.config.panel.max_personas_per_panel:
+            print(f"Too many personas: {len(personas)} > {self.config.panel.max_personas_per_panel}")
             return ""
         
         # Generate panel ID
         panel_id = ff_generate_panel_id(self.config)
         
         # Create panel object
-        panel = FFPanel(
+        panel = FFPanelDTO(
             id=panel_id,
             type=panel_type,
             personas=personas,
             config=config or {},
-            max_personas=self.config.persona_limit
+            max_personas=self.config.panel.user_persona_limit
         )
         
         # Get panel path
@@ -1214,7 +1214,7 @@ class FFStorageManager:
         
         return ""
     
-    async def add_panel_message(self, panel_id: str, message: FFPanelMessage) -> bool:
+    async def add_panel_message(self, panel_id: str, message: FFPanelMessageDTO) -> bool:
         """
         Add message to panel.
         
@@ -1232,7 +1232,7 @@ class FFStorageManager:
         return await self._append_jsonl(messages_key, message.to_dict())
     
     async def get_panel_messages(self, panel_id: str, 
-                               limit: Optional[int] = None) -> List[FFPanelMessage]:
+                               limit: Optional[int] = None) -> List[FFPanelMessageDTO]:
         """
         Get panel conversation.
         
@@ -1249,20 +1249,20 @@ class FFStorageManager:
         messages_key = str(paths["messages"].relative_to(self.base_path))
         messages_path = self.base_path / messages_key
         
-        limit = limit or self.config.message_pagination_default_limit
+        limit = limit or self.config.search.default_page_size
         messages_data = await ff_read_jsonl(messages_path, self.config, limit=limit)
         
         messages = []
         for data in messages_data:
             try:
-                messages.append(FFPanelMessage.from_dict(data))
+                messages.append(FFPanelMessageDTO.from_dict(data))
             except Exception as e:
                 print(f"Failed to parse panel message: {e}")
                 continue
         
         return messages
     
-    async def save_panel_insight(self, panel_id: str, insight: FFPanelInsight) -> bool:
+    async def save_panel_insight(self, panel_id: str, insight: FFPanelInsightDTO) -> bool:
         """
         Save panel analysis or conclusion.
         
@@ -1274,7 +1274,7 @@ class FFStorageManager:
             True if successful
         """
         panel_path = ff_get_panel_path(self.base_path, panel_id, self.config)
-        insights_dir = panel_path / self.config.panel_insights_directory_name
+        insights_dir = panel_path / self.config.panel.insights_subdirectory
         
         insight_path = insights_dir / f"{insight.id}.json"
         insight_key = str(insight_path.relative_to(self.base_path))

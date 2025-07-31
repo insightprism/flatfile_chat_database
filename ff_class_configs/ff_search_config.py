@@ -6,11 +6,11 @@ Manages search behavior, limits, and filtering options.
 
 from dataclasses import dataclass, field
 from typing import List, Optional
-from .ff_base_config import FFBaseConfig, validate_positive, validate_range
+from .ff_base_config import FFBaseConfigDTO, validate_positive, validate_range
 
 
 @dataclass
-class FFSearchConfig(FFBaseConfig):
+class FFSearchConfigDTO(FFBaseConfigDTO):
     """
     Search-specific configuration.
     

@@ -13,11 +13,11 @@ from typing import Dict, Any, Optional, Union, List
 from dataclasses import asdict
 
 from .ff_prismmind_config import (
-    FFPrismMindConfig,
-    FFDocumentProcessingConfig,
-    FFEngineSelectionConfig,
-    FFHandlerStrategiesConfig,
-    FFIntegrationConfig
+    FFPrismMindConfigDTO,
+    FFDocumentProcessingConfigDTO,
+    FFEngineSelectionConfigDTO,
+    FFHandlerStrategiesConfigDTO,
+    FFIntegrationConfigDTO
 )
 from ..config import StorageConfig
 
@@ -26,7 +26,7 @@ class FFPrismMindConfigLoader:
     """Centralized configuration loading with multiple sources"""
     
     @staticmethod
-    def from_file(config_path: Union[str, Path]) -> FFPrismMindConfig:
+    def from_file(config_path: Union[str, Path]) -> FFPrismMindConfigDTO:
         """
         Load configuration from JSON or YAML file.
         
@@ -64,7 +64,7 @@ class FFPrismMindConfigLoader:
             raise ValueError(f"Failed to load configuration from {config_path}: {e}")
     
     @staticmethod
-    def from_environment(prefix: str = "FLATFILE_PM_") -> FFPrismMindConfig:
+    def from_environment(prefix: str = "FLATFILE_PM_") -> FFPrismMindConfigDTO:
         """
         Load configuration from environment variables.
         
@@ -95,7 +95,7 @@ class FFPrismMindConfigLoader:
         return FFPrismMindConfigLoader.from_dict(config_data)
     
     @staticmethod
-    def from_dict(config_dict: Dict[str, Any]) -> FFPrismMindConfig:
+    def from_dict(config_dict: Dict[str, Any]) -> FFPrismMindConfigDTO:
         """
         Load configuration from dictionary.
         
@@ -129,7 +129,7 @@ class FFPrismMindConfigLoader:
             # Extract environment
             environment = config_dict.get("environment", "development")
             
-            return FFPrismMindConfig(
+            return FFPrismMindConfigDTO(
                 flatfile_config=flatfile_config,
                 document_processing=doc_processing_config,
                 engine_selection=engine_selection_config,
@@ -203,7 +203,7 @@ class FFPrismMindConfigLoader:
             return False
     
     @staticmethod
-    def create_default_config() -> FFPrismMindConfig:
+    def create_default_config() -> FFPrismMindConfigDTO:
         """
         Create default configuration with sensible defaults.
         
@@ -214,7 +214,7 @@ class FFPrismMindConfigLoader:
         flatfile_config = StorageConfig()
         
         # Create configuration with all defaults
-        return FFPrismMindConfig(flatfile_config=flatfile_config)
+        return FFPrismMindConfigDTO(flatfile_config=flatfile_config)
     
     @staticmethod
     def load_with_fallbacks(

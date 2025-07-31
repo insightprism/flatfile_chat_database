@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Optional
 import unicodedata
 
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
 
 
 def ff_sanitize_filename(filename: str, max_length: int = 255) -> str:
@@ -52,7 +52,7 @@ def ff_sanitize_filename(filename: str, max_length: int = 255) -> str:
     return filename
 
 
-def ff_generate_session_id(config: StorageConfig) -> str:
+def ff_generate_session_id(config: FFConfigurationManagerConfigDTO) -> str:
     """
     Generate unique session ID using configured format.
     
@@ -62,13 +62,13 @@ def ff_generate_session_id(config: StorageConfig) -> str:
     Returns:
         Session ID like "chat_session_20240722_143022_123456"
     """
-    timestamp = datetime.now().strftime(config.session_timestamp_format)
+    timestamp = datetime.now().strftime(config.storage.session_timestamp_format)
     # Add microseconds to ensure uniqueness
     microseconds = datetime.now().strftime("%f")[:6]
-    return f"{config.session_id_prefix}_{timestamp}_{microseconds}"
+    return f"{config.storage.session_id_prefix}_{timestamp}_{microseconds}"
 
 
-def ff_generate_panel_id(config: StorageConfig) -> str:
+def ff_generate_panel_id(config: FFConfigurationManagerConfigDTO) -> str:
     """
     Generate unique panel ID using configured format.
     
@@ -78,13 +78,13 @@ def ff_generate_panel_id(config: StorageConfig) -> str:
     Returns:
         Panel ID like "panel_20240722_143022_123456"
     """
-    timestamp = datetime.now().strftime(config.session_timestamp_format)
+    timestamp = datetime.now().strftime(config.storage.session_timestamp_format)
     # Add microseconds to ensure uniqueness
     microseconds = datetime.now().strftime("%f")[:6]
     return f"{config.panel_id_prefix}_{timestamp}_{microseconds}"
 
 
-def ff_generate_context_snapshot_id(config: StorageConfig) -> str:
+def ff_generate_context_snapshot_id(config: FFConfigurationManagerConfigDTO) -> str:
     """
     Generate context snapshot filename.
     
@@ -94,13 +94,13 @@ def ff_generate_context_snapshot_id(config: StorageConfig) -> str:
     Returns:
         Snapshot ID like "context_20240722_143022_123456"
     """
-    timestamp = datetime.now().strftime(config.context_snapshot_timestamp_format)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')  # Fixed format
     # Add microseconds to ensure uniqueness
     microseconds = datetime.now().strftime("%f")[:6]
     return f"context_{timestamp}_{microseconds}"
 
 
-def get_base_path(config: StorageConfig) -> Path:
+def get_base_path(config: FFConfigurationManagerConfigDTO) -> Path:
     """
     Get base storage path from configuration.
     
@@ -113,7 +113,7 @@ def get_base_path(config: StorageConfig) -> Path:
     return Path(config.storage_base_path).resolve()
 
 
-def ff_get_user_path(base_path: Path, user_id: str, config: Optional['StorageConfig'] = None) -> Path:
+def ff_get_user_path(base_path: Path, user_id: str, config: Optional['FFConfigurationManagerConfigDTO'] = None) -> Path:
     """
     Get user directory path.
     
@@ -128,12 +128,12 @@ def ff_get_user_path(base_path: Path, user_id: str, config: Optional['StorageCon
     # Sanitize user_id for filesystem
     safe_user_id = ff_sanitize_filename(user_id)
     if config:
-        return base_path / config.user_data_directory_name / safe_user_id
+        return base_path / config.storage.user_data_directory / safe_user_id
     # Default for backward compatibility
     return base_path / "users" / safe_user_id
 
 
-def ff_get_session_path(base_path: Path, user_id: str, session_id: str, config: Optional['StorageConfig'] = None) -> Path:
+def ff_get_session_path(base_path: Path, user_id: str, session_id: str, config: Optional['FFConfigurationManagerConfigDTO'] = None) -> Path:
     """
     Get session directory path.
     
@@ -150,7 +150,7 @@ def ff_get_session_path(base_path: Path, user_id: str, session_id: str, config: 
     return user_path / session_id
 
 
-def ff_get_panel_path(base_path: Path, panel_id: str, config: StorageConfig) -> Path:
+def ff_get_panel_path(base_path: Path, panel_id: str, config: FFConfigurationManagerConfigDTO) -> Path:
     """
     Get panel session directory path.
     
@@ -165,7 +165,7 @@ def ff_get_panel_path(base_path: Path, panel_id: str, config: StorageConfig) -> 
     return base_path / config.panel_sessions_directory_name / panel_id
 
 
-def ff_get_global_personas_path(base_path: Path, config: StorageConfig) -> Path:
+def ff_get_global_personas_path(base_path: Path, config: FFConfigurationManagerConfigDTO) -> Path:
     """
     Get global personas directory path.
     
@@ -176,10 +176,10 @@ def ff_get_global_personas_path(base_path: Path, config: StorageConfig) -> Path:
     Returns:
         Global personas directory path
     """
-    return base_path / config.global_personas_directory_name
+    return base_path / config.panel.global_personas_directory
 
 
-def ff_get_user_personas_path(base_path: Path, user_id: str, config: StorageConfig) -> Path:
+def ff_get_user_personas_path(base_path: Path, user_id: str, config: FFConfigurationManagerConfigDTO) -> Path:
     """
     Get user-specific personas directory path.
     
@@ -195,7 +195,7 @@ def ff_get_user_personas_path(base_path: Path, user_id: str, config: StorageConf
     return user_path / config.panel_personas_directory_name
 
 
-def ff_get_documents_path(session_path: Path, config: StorageConfig) -> Path:
+def ff_get_documents_path(session_path: Path, config: FFConfigurationManagerConfigDTO) -> Path:
     """
     Get documents directory for a session.
     
@@ -206,10 +206,10 @@ def ff_get_documents_path(session_path: Path, config: StorageConfig) -> Path:
     Returns:
         Documents directory path
     """
-    return session_path / config.document_storage_subdirectory_name
+    return session_path / config.document.storage_subdirectory
 
 
-def ff_get_context_history_path(session_path: Path, config: StorageConfig) -> Path:
+def ff_get_context_history_path(session_path: Path, config: FFConfigurationManagerConfigDTO) -> Path:
     """
     Get context history directory for a session.
     
@@ -220,10 +220,10 @@ def ff_get_context_history_path(session_path: Path, config: StorageConfig) -> Pa
     Returns:
         Context history directory path
     """
-    return session_path / config.context_history_subdirectory_name
+    return session_path / "context_history"  # Fixed subdirectory name
 
 
-def get_panel_insights_path(panel_path: Path, config: StorageConfig) -> Path:
+def get_panel_insights_path(panel_path: Path, config: FFConfigurationManagerConfigDTO) -> Path:
     """
     Get insights directory for a panel.
     
@@ -237,7 +237,7 @@ def get_panel_insights_path(panel_path: Path, config: StorageConfig) -> Path:
     return panel_path / config.panel_insights_directory_name
 
 
-def ff_build_file_paths(session_path: Path, config: StorageConfig) -> dict:
+def ff_build_file_paths(session_path: Path, config: FFConfigurationManagerConfigDTO) -> dict:
     """
     Build all standard file paths for a session.
     
@@ -249,16 +249,16 @@ def ff_build_file_paths(session_path: Path, config: StorageConfig) -> dict:
         Dictionary of file paths
     """
     return {
-        "session_metadata": session_path / config.session_metadata_filename,
-        "messages": session_path / config.messages_filename,
-        "situational_context": session_path / config.situational_context_filename,
+        "session_metadata": session_path / config.storage.session_metadata_filename,
+        "messages": session_path / config.storage.messages_filename,
+        "situational_context": session_path / "situational_context.json",  # Fixed filename
         "documents": ff_get_documents_path(session_path, config),
-        "document_metadata": ff_get_documents_path(session_path, config) / config.document_metadata_filename,
+        "document_metadata": ff_get_documents_path(session_path, config) / config.document.metadata_filename,
         "context_history": ff_get_context_history_path(session_path, config)
     }
 
 
-def ff_build_panel_file_paths(panel_path: Path, config: StorageConfig) -> dict:
+def ff_build_panel_file_paths(panel_path: Path, config: FFConfigurationManagerConfigDTO) -> dict:
     """
     Build all standard file paths for a panel session.
     
@@ -271,13 +271,13 @@ def ff_build_panel_file_paths(panel_path: Path, config: StorageConfig) -> dict:
     """
     return {
         "panel_metadata": panel_path / config.panel_metadata_filename,
-        "messages": panel_path / config.messages_filename,
+        "messages": panel_path / config.storage.messages_filename,
         "personas": panel_path / config.panel_personas_directory_name,
         "insights": get_panel_insights_path(panel_path, config)
     }
 
 
-def parse_session_id(session_id: str, config: StorageConfig) -> Optional[datetime]:
+def parse_session_id(session_id: str, config: FFConfigurationManagerConfigDTO) -> Optional[datetime]:
     """
     Parse timestamp from session ID.
     
@@ -290,16 +290,16 @@ def parse_session_id(session_id: str, config: StorageConfig) -> Optional[datetim
     """
     try:
         # Extract timestamp part after prefix
-        prefix = f"{config.session_id_prefix}_"
+        prefix = f"{config.storage.session_id_prefix}_"
         if session_id.startswith(prefix):
             timestamp_str = session_id[len(prefix):]
-            return datetime.strptime(timestamp_str, config.session_timestamp_format)
+            return datetime.strptime(timestamp_str, config.storage.session_timestamp_format)
     except:
         pass
     return None
 
 
-def is_valid_session_id(session_id: str, config: StorageConfig) -> bool:
+def is_valid_session_id(session_id: str, config: FFConfigurationManagerConfigDTO) -> bool:
     """
     Check if session ID follows expected format.
     
@@ -310,11 +310,11 @@ def is_valid_session_id(session_id: str, config: StorageConfig) -> bool:
     Returns:
         True if valid format
     """
-    pattern = f"^{re.escape(config.session_id_prefix)}_\\d{{8}}_\\d{{6}}$"
+    pattern = f"^{re.escape(config.storage.session_id_prefix)}_\\d{{8}}_\\d{{6}}$"
     return bool(re.match(pattern, session_id))
 
 
-def is_valid_panel_id(panel_id: str, config: StorageConfig) -> bool:
+def is_valid_panel_id(panel_id: str, config: FFConfigurationManagerConfigDTO) -> bool:
     """
     Check if panel ID follows expected format.
     
@@ -331,7 +331,7 @@ def is_valid_panel_id(panel_id: str, config: StorageConfig) -> bool:
 
 # Centralized key generation functions for backend storage
 
-def ff_get_user_key(base_path: Path, user_id: str, config: StorageConfig) -> str:
+def ff_get_user_key(base_path: Path, user_id: str, config: FFConfigurationManagerConfigDTO) -> str:
     """
     Get backend storage key for user directory.
     
@@ -343,11 +343,11 @@ def ff_get_user_key(base_path: Path, user_id: str, config: StorageConfig) -> str
     Returns:
         Backend key string
     """
-    user_path = base_path / config.user_data_directory_name / ff_sanitize_filename(user_id)
+    user_path = base_path / config.storage.user_data_directory / ff_sanitize_filename(user_id)
     return str(user_path.relative_to(base_path))
 
 
-def ff_get_session_key(base_path: Path, user_id: str, session_id: str, config: StorageConfig) -> str:
+def ff_get_session_key(base_path: Path, user_id: str, session_id: str, config: FFConfigurationManagerConfigDTO) -> str:
     """
     Get backend storage key for session.
     
@@ -364,7 +364,7 @@ def ff_get_session_key(base_path: Path, user_id: str, session_id: str, config: S
     return str(session_path.relative_to(base_path))
 
 
-def ff_get_profile_key(base_path: Path, user_id: str, config: StorageConfig) -> str:
+def ff_get_profile_key(base_path: Path, user_id: str, config: FFConfigurationManagerConfigDTO) -> str:
     """
     Get backend storage key for user profile.
     
@@ -376,12 +376,12 @@ def ff_get_profile_key(base_path: Path, user_id: str, config: StorageConfig) -> 
     Returns:
         Backend key string
     """
-    user_path = base_path / config.user_data_directory_name / ff_sanitize_filename(user_id)
-    profile_path = user_path / config.user_profile_filename
+    user_path = base_path / config.storage.user_data_directory / ff_sanitize_filename(user_id)
+    profile_path = user_path / config.storage.profile_filename
     return str(profile_path.relative_to(base_path))
 
 
-def ff_get_messages_key(base_path: Path, user_id: str, session_id: str, config: StorageConfig) -> str:
+def ff_get_messages_key(base_path: Path, user_id: str, session_id: str, config: FFConfigurationManagerConfigDTO) -> str:
     """
     Get backend storage key for session messages.
     
@@ -395,11 +395,11 @@ def ff_get_messages_key(base_path: Path, user_id: str, session_id: str, config: 
         Backend key string
     """
     session_path = ff_get_session_path(base_path, user_id, session_id, config)
-    messages_path = session_path / config.messages_filename
+    messages_path = session_path / config.storage.messages_filename
     return str(messages_path.relative_to(base_path))
 
 
-def ff_get_session_metadata_key(base_path: Path, user_id: str, session_id: str, config: StorageConfig) -> str:
+def ff_get_session_metadata_key(base_path: Path, user_id: str, session_id: str, config: FFConfigurationManagerConfigDTO) -> str:
     """
     Get backend storage key for session metadata.
     
@@ -413,7 +413,7 @@ def ff_get_session_metadata_key(base_path: Path, user_id: str, session_id: str, 
         Backend key string
     """
     session_path = ff_get_session_path(base_path, user_id, session_id, config)
-    metadata_path = session_path / config.session_metadata_filename
+    metadata_path = session_path / config.storage.session_metadata_filename
     return str(metadata_path.relative_to(base_path))
 
 

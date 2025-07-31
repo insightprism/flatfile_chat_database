@@ -63,7 +63,7 @@ def current_timestamp() -> str:
 
 
 @dataclass
-class FFMessage:
+class FFMessageDTO:
     """Individual chat message"""
     role: str  # Can be MessageRole value or persona_id for panels
     content: str
@@ -84,13 +84,13 @@ class FFMessage:
         return asdict(self)
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'FFMessage':
+    def from_dict(cls, data: Dict[str, Any]) -> 'FFMessageDTO':
         """Create from dictionary"""
         return cls(**data)
 
 
 @dataclass
-class FFSession:
+class FFSessionDTO:
     """Chat session metadata"""
     session_id: str
     user_id: str
@@ -126,13 +126,13 @@ class FFSession:
         return asdict(self)
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'FFSession':
+    def from_dict(cls, data: Dict[str, Any]) -> 'FFSessionDTO':
         """Create from dictionary"""
         return cls(**data)
 
 
 @dataclass
-class FFPanel:
+class FFPanelDTO:
     """Multi-persona panel session"""
     id: str
     type: str  # PanelType value
@@ -175,13 +175,13 @@ class FFPanel:
         return data
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'FFPanel':
+    def from_dict(cls, data: Dict[str, Any]) -> 'FFPanelDTO':
         """Create from dictionary"""
         return cls(**data)
 
 
 @dataclass
-class FFSituationalContext:
+class FFSituationalContextDTO:
     """Conversation context snapshot"""
     summary: str
     key_points: List[str]
@@ -209,13 +209,13 @@ class FFSituationalContext:
         return data
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'FFSituationalContext':
+    def from_dict(cls, data: Dict[str, Any]) -> 'FFSituationalContextDTO':
         """Create from dictionary"""
         return cls(**data)
 
 
 @dataclass
-class FFDocument:
+class FFDocumentDTO:
     """Document metadata"""
     filename: str
     original_name: str
@@ -248,13 +248,13 @@ class FFDocument:
         return asdict(self)
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'FFDocument':
+    def from_dict(cls, data: Dict[str, Any]) -> 'FFDocumentDTO':
         """Create from dictionary"""
         return cls(**data)
 
 
 @dataclass
-class FFUserProfile:
+class FFUserProfileDTO:
     """User profile data"""
     user_id: str
     username: str = ""
@@ -278,13 +278,13 @@ class FFUserProfile:
         return asdict(self)
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'FFUserProfile':
+    def from_dict(cls, data: Dict[str, Any]) -> 'FFUserProfileDTO':
         """Create from dictionary"""
         return cls(**data)
 
 
 @dataclass
-class FFPanelMessage(FFMessage):
+class FFPanelMessageDTO(FFMessageDTO):
     """Message specific to panel sessions"""
     persona_id: str = ""
     response_to: Optional[str] = None  # Message ID being responded to
@@ -301,7 +301,7 @@ class FFPanelMessage(FFMessage):
 
 
 @dataclass
-class FFPersona:
+class FFPersonaDTO:
     """AI Persona definition"""
     id: str
     name: str
@@ -329,13 +329,13 @@ class FFPersona:
         return asdict(self)
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'FFPersona':
+    def from_dict(cls, data: Dict[str, Any]) -> 'FFPersonaDTO':
         """Create from dictionary"""
         return cls(**data)
 
 
 @dataclass
-class FFPanelInsight:
+class FFPanelInsightDTO:
     """Analysis or conclusion from a panel session"""
     id: str = field(default_factory=lambda: generate_insight_id())
     panel_id: str = ""
@@ -361,13 +361,13 @@ class FFPanelInsight:
         return asdict(self)
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'FFPanelInsight':
+    def from_dict(cls, data: Dict[str, Any]) -> 'FFPanelInsightDTO':
         """Create from dictionary"""
         return cls(**data)
 
 
 @dataclass
-class FFVectorSearchResult:
+class FFVectorSearchResultDTO:
     """Result from vector similarity search"""
     chunk_id: str
     chunk_text: str
@@ -383,7 +383,7 @@ class FFVectorSearchResult:
 
 
 @dataclass
-class FFVectorMetadata:
+class FFVectorMetadataDTO:
     """Metadata for stored vectors"""
     chunk_id: str
     vector_index: int
@@ -398,13 +398,13 @@ class FFVectorMetadata:
         return asdict(self)
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'FFVectorMetadata':
+    def from_dict(cls, data: Dict[str, Any]) -> 'FFVectorMetadataDTO':
         """Create from dictionary"""
         return cls(**data)
 
 
 @dataclass
-class FFProcessingResult:
+class FFProcessingResultDTO:
     """Result from document processing pipeline"""
     success: bool
     document_id: str
@@ -413,3 +413,16 @@ class FFProcessingResult:
     processing_time: float
     error: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+# Backward compatibility aliases for demo files
+FFMessage = FFMessageDTO
+FFSession = FFSessionDTO
+FFDocument = FFDocumentDTO
+FFUserProfile = FFUserProfileDTO
+FFPersona = FFPersonaDTO
+FFPanel = FFPanelDTO
+FFPanelMessage = FFPanelMessageDTO
+FFPanelInsight = FFPanelInsightDTO
+FFSituationalContext = FFSituationalContextDTO
+FFProcessingResult = FFProcessingResultDTO

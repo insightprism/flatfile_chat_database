@@ -13,11 +13,11 @@ from dataclasses import dataclass, fields
 from typing import Dict, Any, List, Optional, Type, TypeVar, get_type_hints, get_origin, get_args
 from pathlib import Path
 
-T = TypeVar('T', bound='FFBaseConfig')
+T = TypeVar('T', bound='FFBaseConfigDTO')
 
 
 @dataclass
-class FFBaseConfig(ABC):
+class FFBaseConfigDTO(ABC):
     """
     Base configuration class with common functionality.
     

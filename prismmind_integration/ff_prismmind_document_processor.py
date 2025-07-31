@@ -28,10 +28,10 @@ except ImportError:
     
     PRISMMIND_AVAILABLE = False
 
-from .ff_prismmind_config import FFPrismMindConfig
+from .ff_prismmind_config import FFPrismMindConfigDTO
 from .ff_prismmind_engine_factory import FFPrismMindConfigFactory
 from ..ff_storage_manager import FFStorageManager
-from ..ff_class_configs.ff_chat_entities_config import FFProcessingResult
+from ..ff_class_configs.ff_chat_entities_config import FFProcessingResultDTO
 
 
 class FFDocumentProcessor:
@@ -41,7 +41,7 @@ class FFDocumentProcessor:
     Replaces FFDocumentProcessingManager with configuration-driven PrismMind approach.
     """
     
-    def __init__(self, config: FFPrismMindConfig):
+    def __init__(self, config: FFPrismMindConfigDTO):
         """
         Initialize processor with configuration.
         
@@ -85,7 +85,7 @@ class FFDocumentProcessor:
         session_id: str,
         document_id: Optional[str] = None,
         processing_overrides: Optional[Dict[str, Any]] = None
-    ) -> FFProcessingResult:
+    ) -> FFProcessingResultDTO:
         """
         Process document using PrismMind engines → store in flatfile.
         
@@ -111,7 +111,7 @@ class FFDocumentProcessor:
             # Validate document exists
             doc_path = Path(document_path)
             if not doc_path.exists():
-                return FFProcessingResult(
+                return FFProcessingResultDTO(
                     success=False,
                     document_id=document_id or "",
                     chunk_count=0,
@@ -157,7 +157,7 @@ class FFDocumentProcessor:
             
         except asyncio.TimeoutError:
             processing_time = asyncio.get_event_loop().time() - start_time
-            return FFProcessingResult(
+            return FFProcessingResultDTO(
                 success=False,
                 document_id=document_id or "",
                 chunk_count=0,
@@ -168,7 +168,7 @@ class FFDocumentProcessor:
             
         except Exception as e:
             processing_time = asyncio.get_event_loop().time() - start_time
-            return FFProcessingResult(
+            return FFProcessingResultDTO(
                 success=False,
                 document_id=document_id or "",
                 chunk_count=0,
@@ -185,7 +185,7 @@ class FFDocumentProcessor:
         session_id: str,
         document_id: str,
         processing_overrides: Optional[Dict[str, Any]] = None
-    ) -> FFProcessingResult:
+    ) -> FFProcessingResultDTO:
         """
         Internal document processing using PrismMind engine chain.
         
@@ -212,7 +212,7 @@ class FFDocumentProcessor:
             )
             
             if not engines:
-                return FFProcessingResult(
+                return FFProcessingResultDTO(
                     success=False,
                     document_id=document_id,
                     chunk_count=0,
@@ -267,7 +267,7 @@ class FFDocumentProcessor:
                 metadata=doc_metadata
             )
             
-            return FFProcessingResult(
+            return FFProcessingResultDTO(
                 success=True,
                 document_id=document_id,
                 chunk_count=chunk_count,
@@ -277,7 +277,7 @@ class FFDocumentProcessor:
             )
             
         except Exception as e:
-            return FFProcessingResult(
+            return FFProcessingResultDTO(
                 success=False,
                 document_id=document_id,
                 chunk_count=0,
@@ -294,7 +294,7 @@ class FFDocumentProcessor:
         document_id: Optional[str] = None,
         text_type: str = "text/plain",
         processing_overrides: Optional[Dict[str, Any]] = None
-    ) -> FFProcessingResult:
+    ) -> FFProcessingResultDTO:
         """
         Process raw text through PrismMind pipeline.
         
@@ -388,7 +388,7 @@ class FFDocumentProcessor:
                 "prismmind_metadata": final_metadata
             }
             
-            return FFProcessingResult(
+            return FFProcessingResultDTO(
                 success=True,
                 document_id=document_id,
                 chunk_count=chunk_count,
@@ -399,7 +399,7 @@ class FFDocumentProcessor:
             
         except Exception as e:
             processing_time = asyncio.get_event_loop().time() - start_time
-            return FFProcessingResult(
+            return FFProcessingResultDTO(
                 success=False,
                 document_id=document_id or "",
                 chunk_count=0,
@@ -435,7 +435,7 @@ class FFDocumentProcessor:
         # Use semaphore to limit concurrency
         semaphore = asyncio.Semaphore(max_concurrent)
         
-        async def process_single_document(doc_path: str) -> FFProcessingResult:
+        async def process_single_document(doc_path: str) -> FFProcessingResultDTO:
             async with semaphore:
                 return await self.process_document(
                     document_path=doc_path,
@@ -471,7 +471,7 @@ class FFDocumentProcessor:
         session_id: str,
         document_id: str,
         new_strategies: Dict[str, str]
-    ) -> FFProcessingResult:
+    ) -> FFProcessingResultDTO:
         """
         Reprocess existing document with new strategies.
         
@@ -489,7 +489,7 @@ class FFDocumentProcessor:
             document = await self.storage_manager.get_document(user_id, session_id, document_id)
             
             if not document:
-                return FFProcessingResult(
+                return FFProcessingResultDTO(
                     success=False,
                     document_id=document_id,
                     chunk_count=0,
@@ -514,7 +514,7 @@ class FFDocumentProcessor:
             )
             
         except Exception as e:
-            return FFProcessingResult(
+            return FFProcessingResultDTO(
                 success=False,
                 document_id=document_id,
                 chunk_count=0,

@@ -9,7 +9,7 @@ import asyncio
 from pathlib import Path
 
 # Test new configuration system
-from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfig, create_default_config
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO, create_default_config
 from ff_class_configs.ff_storage_config import FFStorageConfig as NewStorageConfig
 
 # Test backward compatibility
@@ -120,12 +120,12 @@ async def test_application_container():
         print("✓ Created application container")
         
         # Resolve configuration
-        config = container.resolve(FFConfigurationManagerConfig)
-        print(f"✓ Resolved FFConfigurationManagerConfig: {config.storage.base_path}")
+        config = container.resolve(FFConfigurationManagerConfigDTO)
+        print(f"✓ Resolved FFConfigurationManagerConfigDTO: {config.storage.base_path}")
         
         # Check if services are registered
         services = [
-            ("FFConfigurationManagerConfig", FFConfigurationManagerConfig),
+            ("FFConfigurationManagerConfigDTO", FFConfigurationManagerConfigDTO),
             ("StorageProtocol", StorageProtocol),
             ("SearchProtocol", SearchProtocol),
             ("VectorStoreProtocol", VectorStoreProtocol)

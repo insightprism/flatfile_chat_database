@@ -11,13 +11,13 @@ from typing import AsyncIterator, Dict, List, Optional, Any, Tuple
 import json
 from dataclasses import dataclass
 
-from ff_config_legacy_adapter import StorageConfig
-from ff_class_configs.ff_chat_entities_config import FFMessage, FFSession, FFDocument
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
+from ff_class_configs.ff_chat_entities_config import FFMessageDTO, FFSessionDTO, FFDocumentDTO
 from ff_utils import ff_read_jsonl_paginated, ff_get_user_path
 
 
 @dataclass
-class StreamConfig:
+class FFStreamConfigDTO:
     """Configuration for streaming operations"""
     chunk_size: int = 100
     buffer_size: int = 8192
@@ -32,21 +32,30 @@ class FFMessageStreamerManager:
     Useful for large sessions with thousands of messages.
     """
     
-    def __init__(self, config: StorageConfig, stream_config: Optional[StreamConfig] = None):
+    def __init__(self, config: Union[StorageConfig, FFConfigurationManagerConfigDTO], stream_config: Optional[FFStreamConfigDTO] = None):
         """
         Initialize message streamer manager.
         
         Args:
-            config: Storage configuration
+            config: Storage configuration (legacy or new)
             stream_config: Streaming configuration
         """
         self.config = config
-        self.stream_config = stream_config or StreamConfig()
-        self.base_path = Path(config.storage_base_path)
+        self.stream_config = stream_config or FFStreamConfigDTO()
+        
+        # Handle both old and new configuration formats
+        if hasattr(config, 'storage_base_path'):
+            # Legacy configuration
+            self.base_path = Path(config.storage_base_path)
+        elif hasattr(config, 'storage') and hasattr(config.storage, 'base_path'):
+            # New configuration
+            self.base_path = Path(config.storage.base_path)
+        else:
+            raise ValueError("Configuration must have either 'storage_base_path' or 'storage.base_path' attribute")
     
     async def stream_messages(self, user_id: str, session_id: str,
                             start_offset: int = 0,
-                            max_messages: Optional[int] = None) -> AsyncIterator[List[Message]]:
+                            max_messages: Optional[int] = None) -> AsyncIterator[List[FFMessageDTO]]:
         """
         Stream messages in chunks from a session.
         
@@ -57,7 +66,7 @@ class FFMessageStreamerManager:
             max_messages: Maximum messages to stream
             
         Yields:
-            Chunks of Message objects
+            Chunks of FFMessageDTO objects
         """
         messages_path = (self.base_path / user_id / session_id / 
                         self.config.messages_filename)
@@ -92,7 +101,7 @@ class FFMessageStreamerManager:
             messages = []
             for entry in page_data["entries"]:
                 try:
-                    messages.append(Message.from_dict(entry))
+                    messages.append(FFMessageDTO.from_dict(entry))
                 except Exception as e:
                     print(f"Error parsing message: {e}")
                     continue
@@ -108,7 +117,7 @@ class FFMessageStreamerManager:
             current_offset += chunk_size
     
     async def stream_messages_reverse(self, user_id: str, session_id: str,
-                                    limit: Optional[int] = None) -> AsyncIterator[List[Message]]:
+                                    limit: Optional[int] = None) -> AsyncIterator[List[FFMessageDTO]]:
         """
         Stream messages in reverse order (most recent first).
         
@@ -118,7 +127,7 @@ class FFMessageStreamerManager:
             limit: Maximum messages to stream
             
         Yields:
-            Chunks of Message objects in reverse order
+            Chunks of FFMessageDTO objects in reverse order
         """
         messages_path = (self.base_path / user_id / session_id / 
                         self.config.messages_filename)
@@ -157,7 +166,7 @@ class FFMessageStreamerManager:
                 messages = []
                 for entry in reversed(page_data["entries"]):
                     try:
-                        messages.append(Message.from_dict(entry))
+                        messages.append(FFMessageDTO.from_dict(entry))
                     except Exception:
                         continue
                 
@@ -171,7 +180,7 @@ class FFMessageStreamerManager:
                 break
     
     async def parallel_stream_sessions(self, user_id: str, 
-                                     session_ids: List[str]) -> AsyncIterator[Tuple[str, List[Message]]]:
+                                     session_ids: List[str]) -> AsyncIterator[Tuple[str, List[FFMessageDTO]]]:
         """
         Stream messages from multiple sessions in parallel.
         
@@ -246,17 +255,26 @@ class FFExportStreamerManager:
     Handles efficient export of large datasets without memory issues.
     """
     
-    def __init__(self, config: StorageConfig, stream_config: Optional[StreamConfig] = None):
+    def __init__(self, config: Union[StorageConfig, FFConfigurationManagerConfigDTO], stream_config: Optional[FFStreamConfigDTO] = None):
         """
         Initialize export streamer manager.
         
         Args:
-            config: Storage configuration
+            config: Storage configuration (legacy or new)
             stream_config: Streaming configuration
         """
         self.config = config
-        self.stream_config = stream_config or StreamConfig()
-        self.base_path = Path(config.storage_base_path)
+        self.stream_config = stream_config or FFStreamConfigDTO()
+        
+        # Handle both old and new configuration formats
+        if hasattr(config, 'storage_base_path'):
+            # Legacy configuration
+            self.base_path = Path(config.storage_base_path)
+        elif hasattr(config, 'storage') and hasattr(config.storage, 'base_path'):
+            # New configuration
+            self.base_path = Path(config.storage.base_path)
+        else:
+            raise ValueError("Configuration must have either 'storage_base_path' or 'storage.base_path' attribute")
         self.message_streamer = FFMessageStreamerManager(config, stream_config)
     
     async def stream_session_export(self, user_id: str, session_id: str,
@@ -389,20 +407,29 @@ class FFLazyLoaderManager:
     Loads data on-demand to minimize memory usage.
     """
     
-    def __init__(self, config: StorageConfig):
+    def __init__(self, config: Union[StorageConfig, FFConfigurationManagerConfigDTO]):
         """
         Initialize lazy loader manager.
         
         Args:
-            config: Storage configuration
+            config: Storage configuration (legacy or new)
         """
         self.config = config
-        self.base_path = Path(config.storage_base_path)
+        
+        # Handle both old and new configuration formats
+        if hasattr(config, 'storage_base_path'):
+            # Legacy configuration
+            self.base_path = Path(config.storage_base_path)
+        elif hasattr(config, 'storage') and hasattr(config.storage, 'base_path'):
+            # New configuration
+            self.base_path = Path(config.storage.base_path)
+        else:
+            raise ValueError("Configuration must have either 'storage_base_path' or 'storage.base_path' attribute")
         self._cache = {}
         self._cache_size_limit = 100  # Maximum cached items
     
     async def get_message_lazy(self, user_id: str, session_id: str, 
-                             message_index: int) -> Optional[Message]:
+                             message_index: int) -> Optional[FFMessageDTO]:
         """
         Lazily load a single message by index.
         
@@ -412,7 +439,7 @@ class FFLazyLoaderManager:
             message_index: Message index (0-based)
             
         Returns:
-            Message object or None
+            FFMessageDTO object or None
         """
         cache_key = f"{user_id}:{session_id}:{message_index}"
         
@@ -434,7 +461,7 @@ class FFLazyLoaderManager:
                     if i == message_index:
                         if line.strip():
                             msg_data = json.loads(line)
-                            msg = Message.from_dict(msg_data)
+                            msg = FFMessageDTO.from_dict(msg_data)
                             
                             # Cache it
                             self._add_to_cache(cache_key, msg)

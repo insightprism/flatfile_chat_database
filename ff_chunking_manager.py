@@ -9,7 +9,7 @@ import asyncio
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
 
 # PrismMind Engine Imports
 try:
@@ -22,7 +22,7 @@ except ImportError:
 
 
 @dataclass
-class FFChunkingConfig:
+class FFChunkingConfigDTO:
     """Configuration for a chunking strategy - kept for backward compatibility"""
     chunk_strategy: str
     chunk_size: int = 800
@@ -56,7 +56,7 @@ class FFChunkingManager:
     
     # Legacy strategy configs (kept for validation/metadata)
     STRATEGIES = {
-        "optimized_summary": FFChunkingConfig(
+        "optimized_summary": FFChunkingConfigDTO(
             chunk_strategy="optimize",
             chunk_size=800,
             chunk_overlap=100,
@@ -67,22 +67,22 @@ class FFChunkingManager:
             min_tokens_per_chunk=128,
             chunk_overlap_sentences=1
         ),
-        "default_fixed": FFChunkingConfig(
+        "default_fixed": FFChunkingConfigDTO(
             chunk_strategy="fixed",
             chunk_size=512,
             chunk_overlap=64
         ),
-        "sentence_short": FFChunkingConfig(
+        "sentence_short": FFChunkingConfigDTO(
             chunk_strategy="sentence",
             sentence_per_chunk=2,
             sentence_overlap=0
         ),
-        "sentence_medium": FFChunkingConfig(
+        "sentence_medium": FFChunkingConfigDTO(
             chunk_strategy="sentence",
             sentence_per_chunk=5,
             sentence_overlap=1
         ),
-        "large_context": FFChunkingConfig(
+        "large_context": FFChunkingConfigDTO(
             chunk_strategy="optimize",
             chunk_size=1200,
             chunk_overlap=200,
@@ -93,9 +93,9 @@ class FFChunkingManager:
         )
     }
     
-    def __init__(self, config: StorageConfig):
+    def __init__(self, config: FFConfigurationManagerConfigDTO):
         self.config = config
-        self.default_strategy = config.default_chunking_strategy
+        self.default_strategy = config.vector.default_chunking_strategy
     
     async def chunk_text(
         self, 

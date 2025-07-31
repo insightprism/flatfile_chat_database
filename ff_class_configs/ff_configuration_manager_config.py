@@ -11,17 +11,17 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List, Union
 from dataclasses import dataclass, field
 
-from .ff_base_config import FFBaseConfig
-from .ff_storage_config import FFStorageConfig
-from .ff_search_config import FFSearchConfig
-from .ff_vector_storage_config import FFVectorStorageConfig
-from .ff_document_config import FFDocumentConfig
-from .ff_locking_config import FFLockingConfig
-from .ff_persona_panel_config import FFPersonaPanelConfig
+from .ff_base_config import FFBaseConfigDTO
+from .ff_storage_config import FFStorageConfigDTO
+from .ff_search_config import FFSearchConfigDTO
+from .ff_vector_storage_config import FFVectorStorageConfigDTO
+from .ff_document_config import FFDocumentConfigDTO
+from .ff_locking_config import FFLockingConfigDTO
+from .ff_persona_panel_config import FFPersonaPanelConfigDTO
 
 
 @dataclass
-class FFConfigurationManagerConfig:
+class FFConfigurationManagerConfigDTO:
     """
     Central configuration manager for all domains.
     
@@ -29,12 +29,12 @@ class FFConfigurationManagerConfig:
     while maintaining separation of concerns.
     """
     
-    storage: FFStorageConfig = field(default_factory=FFStorageConfig)
-    search: FFSearchConfig = field(default_factory=FFSearchConfig)
-    vector: FFVectorStorageConfig = field(default_factory=FFVectorStorageConfig)
-    document: FFDocumentConfig = field(default_factory=FFDocumentConfig)
-    locking: FFLockingConfig = field(default_factory=FFLockingConfig)
-    panel: FFPersonaPanelConfig = field(default_factory=FFPersonaPanelConfig)
+    storage: FFStorageConfigDTO = field(default_factory=FFStorageConfigDTO)
+    search: FFSearchConfigDTO = field(default_factory=FFSearchConfigDTO)
+    vector: FFVectorStorageConfigDTO = field(default_factory=FFVectorStorageConfigDTO)
+    document: FFDocumentConfigDTO = field(default_factory=FFDocumentConfigDTO)
+    locking: FFLockingConfigDTO = field(default_factory=FFLockingConfigDTO)
+    panel: FFPersonaPanelConfigDTO = field(default_factory=FFPersonaPanelConfigDTO)
     
     # Manager settings
     config_file_path: Optional[Path] = None
@@ -57,7 +57,7 @@ class FFConfigurationManagerConfig:
                 raise ValueError(f"Configuration validation failed: {'; '.join(errors)}")
     
     @classmethod
-    def from_file(cls, file_path: Union[str, Path], environment: Optional[str] = None) -> 'FFConfigurationManagerConfig':
+    def from_file(cls, file_path: Union[str, Path], environment: Optional[str] = None) -> 'FFConfigurationManagerConfigDTO':
         """
         Create configuration manager from file.
         
@@ -74,7 +74,7 @@ class FFConfigurationManagerConfig:
         )
     
     @classmethod
-    def from_environment(cls, environment: str) -> 'FFConfigurationManagerConfig':
+    def from_environment(cls, environment: str) -> 'FFConfigurationManagerConfigDTO':
         """
         Create configuration manager for specific environment.
         
@@ -123,17 +123,17 @@ class FFConfigurationManagerConfig:
         
         # Load each domain configuration
         if "storage" in data:
-            self.storage = FFStorageConfig.from_dict(data["storage"])
+            self.storage = FFStorageConfigDTO.from_dict(data["storage"])
         if "search" in data:
-            self.search = FFSearchConfig.from_dict(data["search"])
+            self.search = FFSearchConfigDTO.from_dict(data["search"])
         if "vector" in data:
-            self.vector = FFVectorStorageConfig.from_dict(data["vector"])
+            self.vector = FFVectorStorageConfigDTO.from_dict(data["vector"])
         if "document" in data:
-            self.document = FFDocumentConfig.from_dict(data["document"])
+            self.document = FFDocumentConfigDTO.from_dict(data["document"])
         if "locking" in data:
-            self.locking = FFLockingConfig.from_dict(data["locking"])
+            self.locking = FFLockingConfigDTO.from_dict(data["locking"])
         if "panel" in data:
-            self.panel = FFPersonaPanelConfig.from_dict(data["panel"])
+            self.panel = FFPersonaPanelConfigDTO.from_dict(data["panel"])
     
     def save_to_file(self, file_path: Path) -> None:
         """
@@ -244,7 +244,7 @@ class FFConfigurationManagerConfig:
         
         return errors
     
-    def get_domain_config(self, domain: str) -> Optional[FFBaseConfig]:
+    def get_domain_config(self, domain: str) -> Optional[FFBaseConfigDTO]:
         """
         Get configuration for a specific domain.
         
@@ -293,14 +293,14 @@ class FFConfigurationManagerConfig:
     
     def __repr__(self) -> str:
         """String representation of configuration manager."""
-        return f"FFConfigurationManagerConfig(environment={self.environment}, base_path={self.storage.base_path})"
+        return f"FFConfigurationManagerConfigDTO(environment={self.environment}, base_path={self.storage.base_path})"
 
 
 # Convenience functions
 def load_config(
     config_path: Optional[Union[str, Path]] = None,
     environment: Optional[str] = None
-) -> FFConfigurationManagerConfig:
+) -> FFConfigurationManagerConfigDTO:
     """
     Load configuration with automatic environment detection.
     
@@ -323,12 +323,12 @@ def load_config(
     
     # Create manager
     if config_path:
-        return FFConfigurationManagerConfig.from_file(config_path, environment)
+        return FFConfigurationManagerConfigDTO.from_file(config_path, environment)
     else:
-        return FFConfigurationManagerConfig.from_environment(environment)
+        return FFConfigurationManagerConfigDTO.from_environment(environment)
 
 
-def create_default_config(environment: str = "development") -> FFConfigurationManagerConfig:
+def create_default_config(environment: str = "development") -> FFConfigurationManagerConfigDTO:
     """
     Create default configuration for an environment.
     
@@ -338,4 +338,4 @@ def create_default_config(environment: str = "development") -> FFConfigurationMa
     Returns:
         Default configuration manager
     """
-    return FFConfigurationManagerConfig.from_environment(environment)
+    return FFConfigurationManagerConfigDTO.from_environment(environment)

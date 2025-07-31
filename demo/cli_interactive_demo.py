@@ -27,8 +27,8 @@ else:
 
 from ff_storage_manager import FFStorageManager
 from ff_config_legacy_adapter import StorageConfig
-from ff_class_configs.ff_chat_entities_config import FFMessage, FFSession, FFDocument, FFUserProfile, MessageRole
-from ff_search_manager import SearchQuery, FFSearchManager
+from ff_class_configs.ff_chat_entities_config import FFMessageDTO, FFSession, FFDocument, FFUserProfile, MessageRole
+from ff_search_manager import FFSearchQuery, FFSearchManager
 from ff_vector_storage_manager import FFVectorStorageManager
 from ff_document_processing_manager import FFDocumentProcessingManager
 
@@ -368,7 +368,7 @@ class InteractiveDemo:
             return
             
         try:
-            message = FFMessage(role=role, content=content)
+            message = FFMessageDTO(role=role, content=content)
             await self.storage_manager.store_message(
                 self.current_session.session_id,
                 self.current_user,
@@ -615,7 +615,7 @@ class InteractiveDemo:
             return
             
         try:
-            search_query = SearchQuery(
+            search_query = FFSearchQuery(
                 query_text=query_text,
                 user_id=self.current_user,
                 session_id=self.current_session.session_id if self.current_session else None,
@@ -646,7 +646,7 @@ class InteractiveDemo:
             return
             
         try:
-            search_query = SearchQuery(
+            search_query = FFSearchQuery(
                 query_text=query_text,
                 user_id=self.current_user,
                 session_id=self.current_session.session_id if self.current_session else None,
@@ -677,7 +677,7 @@ class InteractiveDemo:
             return
             
         try:
-            search_query = SearchQuery(
+            search_query = FFSearchQuery(
                 query_text=query_text,
                 user_id=self.current_user,
                 session_id=self.current_session.session_id if self.current_session else None,
@@ -797,8 +797,8 @@ class InteractiveDemo:
         
         # Try new config system
         try:
-            from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfig
-            new_config = FFConfigurationManagerConfig.from_environment("development")
+            from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
+            new_config = FFConfigurationManagerConfigDTO.from_environment("development")
             
             print(f"\nNew Modular Configuration:")
             print(f"  Environment: {new_config.environment}")
@@ -867,7 +867,7 @@ class InteractiveDemo:
             print("✅ Created test session")
             
             # Add test message
-            message = FFMessage(
+            message = FFMessageDTO(
                 role=MessageRole.USER,
                 content="This is a test message for the quick test."
             )
@@ -884,7 +884,7 @@ class InteractiveDemo:
             print("✅ Added test document")
             
             # Test search
-            search_query = SearchQuery(
+            search_query = FFSearchQuery(
                 query_text="test",
                 user_id="test_user",
                 session_id=session.session_id,

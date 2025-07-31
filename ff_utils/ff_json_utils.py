@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, AsyncIterator
 import aiofiles
 
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
 from ff_utils.ff_file_ops import ff_atomic_write, ff_atomic_append, ff_safe_read
 
 
@@ -23,7 +23,7 @@ class FFJSONError(Exception):
 async def ff_write_json(
     path: Path,
     data: Dict[str, Any],
-    config: StorageConfig,
+    config: FFConfigurationManagerConfigDTO,
     pretty: bool = True
 ) -> bool:
     """
@@ -57,7 +57,7 @@ async def ff_write_json(
 
 async def ff_read_json(
     path: Path,
-    config: StorageConfig,
+    config: FFConfigurationManagerConfigDTO,
     default: Optional[Dict[str, Any]] = None
 ) -> Optional[Dict[str, Any]]:
     """
@@ -80,7 +80,7 @@ async def ff_read_json(
         data = json.loads(content)
         
         # Validate if configured
-        if config.validate_json_on_read and not isinstance(data, dict):
+        if config.storage.validate_json_on_read and not isinstance(data, dict):
             print(f"Warning: Expected dict in {path}, got {type(data)}")
             return default
             
@@ -94,7 +94,7 @@ async def ff_read_json(
 async def ff_append_jsonl(
     path: Path,
     entry: Dict[str, Any],
-    config: StorageConfig
+    config: FFConfigurationManagerConfigDTO
 ) -> bool:
     """
     Append entry to JSONL file with file locking.
@@ -125,7 +125,7 @@ async def ff_append_jsonl(
 
 async def ff_read_jsonl(
     path: Path,
-    config: StorageConfig,
+    config: FFConfigurationManagerConfigDTO,
     limit: Optional[int] = None,
     offset: int = 0
 ) -> List[Dict[str, Any]]:
@@ -166,7 +166,7 @@ async def ff_read_jsonl(
                 
                 try:
                     entry = json.loads(line)
-                    if config.validate_json_on_read and not isinstance(entry, dict):
+                    if config.storage.validate_json_on_read and not isinstance(entry, dict):
                         print(f"Warning: Invalid JSONL entry at line {line_num + 1}")
                         continue
                     entries.append(entry)
@@ -184,7 +184,7 @@ async def ff_read_jsonl(
 
 async def ff_read_jsonl_paginated(
     path: Path,
-    config: StorageConfig,
+    config: FFConfigurationManagerConfigDTO,
     page_size: Optional[int] = None,
     page: int = 0
 ) -> Dict[str, Any]:
@@ -224,7 +224,7 @@ async def ff_read_jsonl_paginated(
 
 async def ff_stream_jsonl(
     path: Path,
-    config: StorageConfig,
+    config: FFConfigurationManagerConfigDTO,
     chunk_size: int = 100
 ) -> AsyncIterator[List[Dict[str, Any]]]:
     """
@@ -245,7 +245,7 @@ async def ff_stream_jsonl(
     
     try:
         async with aiofiles.open(path, mode='r', encoding='utf-8', 
-                               buffering=config.jsonl_read_buffer_size) as f:
+                               buffering=config.storage.jsonl_read_buffer_size) as f:
             async for line in f:
                 line = line.strip()
                 if not line:
@@ -298,7 +298,7 @@ async def ff_count_jsonl_entries(path: Path) -> int:
 
 async def ff_update_jsonl_entry(
     path: Path,
-    config: StorageConfig,
+    config: FFConfigurationManagerConfigDTO,
     entry_id: str,
     id_field: str,
     updates: Dict[str, Any]
@@ -357,7 +357,7 @@ async def ff_update_jsonl_entry(
 async def ff_merge_json_files(
     files: List[Path],
     output_path: Path,
-    config: StorageConfig
+    config: FFConfigurationManagerConfigDTO
 ) -> bool:
     """
     Merge multiple JSON files into one.

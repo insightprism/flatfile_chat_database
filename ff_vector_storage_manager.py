@@ -14,8 +14,8 @@ from datetime import datetime
 
 from ff_utils.ff_file_ops import ff_atomic_write, ff_ensure_directory
 from ff_utils.ff_json_utils import ff_read_jsonl, ff_append_jsonl
-from ff_config_legacy_adapter import StorageConfig
-from ff_class_configs.ff_chat_entities_config import FFVectorSearchResult
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
+from ff_class_configs.ff_chat_entities_config import FFVectorSearchResultDTO
 
 
 class FFVectorStorageManager:
@@ -24,9 +24,9 @@ class FFVectorStorageManager:
     Provides efficient storage and retrieval of embedding vectors.
     """
     
-    def __init__(self, config: StorageConfig):
+    def __init__(self, config: FFConfigurationManagerConfigDTO):
         self.config = config
-        self.base_path = Path(config.storage_base_path)
+        self.base_path = Path(config.storage.base_path)
     
     async def store_vectors(
         self, 
@@ -58,7 +58,7 @@ class FFVectorStorageManager:
         
         # Load existing vectors if any
         embeddings_path = vector_dir / self.config.embeddings_filename
-        index_path = vector_dir / self.config.vector_index_filename
+        index_path = vector_dir / self.config.vector.index_filename
         
         if embeddings_path.exists():
             existing_embeddings = np.load(embeddings_path)
@@ -123,7 +123,7 @@ class FFVectorStorageManager:
         """
         vector_dir = self._get_vector_path(session_id)
         embeddings_path = vector_dir / self.config.embeddings_filename
-        index_path = vector_dir / self.config.vector_index_filename
+        index_path = vector_dir / self.config.vector.index_filename
         
         if not embeddings_path.exists():
             return None, []
@@ -139,7 +139,7 @@ class FFVectorStorageManager:
         query_vector: List[float],
         top_k: int = 5,
         threshold: float = 0.7
-    ) -> List[FFVectorSearchResult]:
+    ) -> List[FFVectorSearchResultDTO]:
         """
         Search for similar vectors using cosine similarity.
         
@@ -176,7 +176,7 @@ class FFVectorStorageManager:
         for idx in top_indices:
             if idx < len(index):
                 entry = index[idx]
-                result = FFVectorSearchResult(
+                result = FFVectorSearchResultDTO(
                     chunk_id=entry["chunk_id"],
                     chunk_text=entry["chunk_text"],
                     similarity_score=float(similarities[idx]),
@@ -194,7 +194,7 @@ class FFVectorStorageManager:
         query_vector: List[float],
         top_k: int = 5,
         threshold: float = 0.7
-    ) -> List[FFVectorSearchResult]:
+    ) -> List[FFVectorSearchResultDTO]:
         """
         Search for similar vectors across multiple sessions.
         
@@ -255,7 +255,7 @@ class FFVectorStorageManager:
         # Save filtered data
         vector_dir = self._get_vector_path(session_id)
         embeddings_path = vector_dir / self.config.embeddings_filename
-        index_path = vector_dir / self.config.vector_index_filename
+        index_path = vector_dir / self.config.vector.index_filename
         
         if len(keep_indices) > 0:
             new_embeddings = embeddings[keep_indices]
@@ -290,7 +290,7 @@ class FFVectorStorageManager:
         # Calculate storage size
         vector_dir = self._get_vector_path(session_id)
         embeddings_path = vector_dir / self.config.embeddings_filename
-        index_path = vector_dir / self.config.vector_index_filename
+        index_path = vector_dir / self.config.vector.index_filename
         
         storage_size = 0
         if embeddings_path.exists():
@@ -313,24 +313,24 @@ class FFVectorStorageManager:
         # We'll need to find the user directory that contains this session
         
         # Search for the session in all user directories
-        users_dir = self.base_path / self.config.user_data_directory_name
+        users_dir = self.base_path / self.config.storage.user_data_directory
         if not users_dir.exists():
             users_dir.mkdir(parents=True, exist_ok=True)
         
         for user_dir in users_dir.iterdir():
             if user_dir.is_dir():
-                session_path = user_dir / self.config.session_data_directory_name / session_id
+                session_path = user_dir / self.config.storage.session_data_directory / session_id
                 if session_path.exists():
-                    return session_path / self.config.vector_storage_subdirectory
+                    return session_path / self.config.vector.storage_subdirectory
         
         # If session not found, create a default path
         # This handles new sessions
         default_user = "default"
         return (
             self.base_path / 
-            self.config.user_data_directory_name /
+            self.config.storage.user_data_directory /
             default_user /
-            self.config.session_data_directory_name /
+            self.config.storage.session_data_directory /
             session_id /
-            self.config.vector_storage_subdirectory
+            self.config.vector.storage_subdirectory
         )

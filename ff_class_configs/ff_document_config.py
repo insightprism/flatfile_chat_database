@@ -6,11 +6,11 @@ Manages document handling, file types, and processing parameters.
 
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
-from .ff_base_config import FFBaseConfig, validate_positive, validate_non_empty
+from .ff_base_config import FFBaseConfigDTO, validate_positive, validate_non_empty
 
 
 @dataclass
-class FFDocumentConfig(FFBaseConfig):
+class FFDocumentConfigDTO(FFBaseConfigDTO):
     """
     Document processing configuration.
     

@@ -15,7 +15,7 @@ import platform
 import time
 from datetime import datetime
 
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
 
 
 class FFFileOperationError(Exception):
@@ -43,7 +43,7 @@ else:
 class FFFileLock:
     """Cross-platform file lock implementation"""
     
-    def __init__(self, path: Path, timeout: float = 30.0, config: Optional[StorageConfig] = None):
+    def __init__(self, path: Path, timeout: float = 30.0, config: Optional[FFConfigurationManagerConfigDTO] = None):
         """
         Initialize file lock.
         
@@ -74,8 +74,8 @@ class FFFileLock:
         
         # Get retry parameters from config or use defaults
         if self.config:
-            retry_delay = self.config.lock_retry_delay_ms / 1000.0  # Convert ms to seconds
-            max_delay = self.config.lock_retry_max_delay_seconds
+            retry_delay = self.config.locking.retry_initial_delay_ms / 1000.0  # Convert ms to seconds
+            max_delay = self.config.locking.retry_max_delay_seconds
         else:
             retry_delay = 0.01  # 10ms default
             max_delay = 1.0  # 1 second default
@@ -156,7 +156,7 @@ class FileOperationManager:
     to prevent concurrent access issues.
     """
     
-    def __init__(self, config: StorageConfig):
+    def __init__(self, config: FFConfigurationManagerConfigDTO):
         """
         Initialize file operation manager.
         
@@ -262,13 +262,13 @@ class FileOperationManager:
     async def _write_internal(self, path: Path, data: Union[str, bytes], write_mode: str = 'wb') -> bool:
         """Internal write implementation with atomic operation"""
         # Ensure parent directory exists
-        if self.config.create_parent_directories:
+        if self.config.storage.create_parent_directories:
             path.parent.mkdir(parents=True, exist_ok=True)
         
         # Create temp file in same directory for atomic rename with unique name
         import uuid
-        uuid_length = self.config.temp_file_suffix_length
-        temp_suffix = f"{self.config.atomic_write_temp_suffix}.{uuid.uuid4().hex[:uuid_length]}"
+        uuid_length = self.config.storage.temp_file_suffix_length
+        temp_suffix = f"{self.config.storage.atomic_write_temp_suffix}.{uuid.uuid4().hex[:uuid_length]}"
         temp_path = path.with_suffix(path.suffix + temp_suffix)
         
         try:
@@ -288,8 +288,8 @@ class FileOperationManager:
             await asyncio.get_event_loop().run_in_executor(None, write_data)
             
             # Atomic rename with retry for concurrent access
-            max_retries = self.config.file_operation_max_retries
-            retry_delay_ms = self.config.file_operation_retry_delay_ms
+            max_retries = self.config.storage.file_operation_max_retries
+            retry_delay_ms = self.config.storage.file_operation_retry_delay_ms
             
             for attempt in range(max_retries):
                 try:
@@ -320,7 +320,7 @@ class FileOperationManager:
         """Internal append implementation"""
         try:
             # Ensure parent directory exists
-            if self.config.create_parent_directories:
+            if self.config.storage.create_parent_directories:
                 path.parent.mkdir(parents=True, exist_ok=True)
             
             # Convert string to bytes if needed
@@ -362,7 +362,7 @@ _manager_instance: Optional[FileOperationManager] = None
 _manager_lock = asyncio.Lock()
 
 
-async def ff_get_file_operation_manager(config: StorageConfig) -> FileOperationManager:
+async def ff_get_file_operation_manager(config: FFConfigurationManagerConfigDTO) -> FileOperationManager:
     """
     Get or create the global file operation manager.
     
@@ -383,7 +383,7 @@ async def ff_get_file_operation_manager(config: StorageConfig) -> FileOperationM
 async def ff_atomic_write(
     path: Path,
     data: Union[str, bytes],
-    config: StorageConfig,
+    config: FFConfigurationManagerConfigDTO,
     mode: str = 'wb'
 ) -> bool:
     """
@@ -412,7 +412,7 @@ async def ff_safe_read(
     path: Path,
     mode: str = 'rb',
     encoding: str = 'utf-8',
-    config: Optional[StorageConfig] = None
+    config: Optional[FFConfigurationManagerConfigDTO] = None
 ) -> Optional[Union[str, bytes]]:
     """
     Safely read file contents with optional locking.
@@ -466,7 +466,7 @@ async def ff_ensure_directory(path: Path) -> bool:
 
 async def ff_safe_delete(
     path: Path,
-    config: StorageConfig,
+    config: FFConfigurationManagerConfigDTO,
     backup_callback: Optional[Callable[[Path], None]] = None
 ) -> bool:
     """
@@ -531,7 +531,7 @@ async def ff_cleanup_empty_directories(path: Path) -> None:
 async def ff_copy_file(
     source: Path,
     destination: Path,
-    config: StorageConfig
+    config: FFConfigurationManagerConfigDTO
 ) -> bool:
     """
     Copy file with atomic operation.
@@ -564,7 +564,7 @@ async def ff_copy_file(
 async def ff_move_file(
     source: Path,
     destination: Path,
-    config: StorageConfig
+    config: FFConfigurationManagerConfigDTO
 ) -> bool:
     """
     Move file atomically.
@@ -683,7 +683,7 @@ async def ff_get_directory_size(directory: Path) -> int:
 async def ff_atomic_append(
     path: Path,
     data: Union[str, bytes],
-    config: StorageConfig
+    config: FFConfigurationManagerConfigDTO
 ) -> bool:
     """
     Perform atomic append operation with file locking.

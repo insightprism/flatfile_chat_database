@@ -30,8 +30,8 @@ else:
 
 from ff_storage_manager import FFStorageManager
 from ff_config_legacy_adapter import StorageConfig
-from ff_class_configs.ff_chat_entities_config import FFMessage, FFSession, FFDocument, FFUserProfile, MessageRole
-from ff_search_manager import SearchQuery, FFSearchManager
+from ff_class_configs.ff_chat_entities_config import FFMessageDTO, FFSession, FFDocument, FFUserProfile, MessageRole
+from ff_search_manager import FFSearchQuery, FFSearchManager
 from ff_vector_storage_manager import FFVectorStorageManager
 from ff_document_processing_manager import FFDocumentProcessingManager
 
@@ -213,37 +213,37 @@ class AutomatedDemo:
         
         # Messages for Deep Learning Research Discussion
         dl_messages = [
-            FFMessage(role=MessageRole.USER, content="I'm working on a new transformer architecture for document understanding. Can you help me think through the attention mechanism design?"),
-            FFMessage(role=MessageRole.ASSISTANT, content="I'd be happy to help with your transformer architecture! Document understanding often benefits from hierarchical attention patterns. Are you planning to use standard multi-head attention, or are you considering something like sparse attention or local-global patterns?"),
-            FFMessage(role=MessageRole.USER, content="I was thinking about combining local attention for fine-grained features with global attention for document-level context. But I'm concerned about computational complexity."),
-            FFMessage(role=MessageRole.ASSISTANT, content="That's a smart approach! You could implement a hybrid attention mechanism:\n\n1. **Local Attention**: Process text in sliding windows for detailed linguistic features\n2. **Global Attention**: Use a smaller set of learnable global tokens that attend to the full document\n3. **Cross-Attention**: Let local and global representations interact\n\nFor efficiency, consider:\n- Gradient checkpointing for memory\n- Mixed precision training\n- Attention window sizes that divide evenly into your sequence length\n\nWhat's your target document length?"),
-            FFMessage(role=MessageRole.USER, content="Documents are typically 5-50 pages, so sequence lengths around 10k-100k tokens. I'm also wondering about position encodings for such long sequences."),
-            FFMessage(role=MessageRole.ASSISTANT, content="For sequences that long, standard sinusoidal position encodings can struggle. Consider these alternatives:\n\n**Relative Position Encodings**: More robust for varying lengths\n- T5-style relative position bias\n- RoPE (Rotary Position Embedding)\n\n**Hierarchical Positions**: Encode page/paragraph/sentence structure\n- Separate embeddings for each hierarchy level\n- Sum or concatenate hierarchical position features\n\n**Learnable Position Encodings**: With proper initialization\n- Initialize with sinusoidal patterns\n- Allow fine-tuning for your specific domain\n\nGiven your document structure, I'd recommend experimenting with hierarchical positions combined with RoPE for the fine-grained attention patterns.")
+            FFMessageDTO(role=MessageRole.USER, content="I'm working on a new transformer architecture for document understanding. Can you help me think through the attention mechanism design?"),
+            FFMessageDTO(role=MessageRole.ASSISTANT, content="I'd be happy to help with your transformer architecture! Document understanding often benefits from hierarchical attention patterns. Are you planning to use standard multi-head attention, or are you considering something like sparse attention or local-global patterns?"),
+            FFMessageDTO(role=MessageRole.USER, content="I was thinking about combining local attention for fine-grained features with global attention for document-level context. But I'm concerned about computational complexity."),
+            FFMessageDTO(role=MessageRole.ASSISTANT, content="That's a smart approach! You could implement a hybrid attention mechanism:\n\n1. **Local Attention**: Process text in sliding windows for detailed linguistic features\n2. **Global Attention**: Use a smaller set of learnable global tokens that attend to the full document\n3. **Cross-Attention**: Let local and global representations interact\n\nFor efficiency, consider:\n- Gradient checkpointing for memory\n- Mixed precision training\n- Attention window sizes that divide evenly into your sequence length\n\nWhat's your target document length?"),
+            FFMessageDTO(role=MessageRole.USER, content="Documents are typically 5-50 pages, so sequence lengths around 10k-100k tokens. I'm also wondering about position encodings for such long sequences."),
+            FFMessageDTO(role=MessageRole.ASSISTANT, content="For sequences that long, standard sinusoidal position encodings can struggle. Consider these alternatives:\n\n**Relative Position Encodings**: More robust for varying lengths\n- T5-style relative position bias\n- RoPE (Rotary Position Embedding)\n\n**Hierarchical Positions**: Encode page/paragraph/sentence structure\n- Separate embeddings for each hierarchy level\n- Sum or concatenate hierarchical position features\n\n**Learnable Position Encodings**: With proper initialization\n- Initialize with sinusoidal patterns\n- Allow fine-tuning for your specific domain\n\nGiven your document structure, I'd recommend experimenting with hierarchical positions combined with RoPE for the fine-grained attention patterns.")
         ]
         
         # Messages for Database Design Consultation  
         db_messages = [
-            FFMessage(role=MessageRole.USER, content="I need to design a database for a multi-tenant SaaS application with complex hierarchical data. What approach would you recommend?"),
-            FFMessage(role=MessageRole.ASSISTANT, content="For multi-tenant SaaS with hierarchical data, you have several architecture options:\n\n**Multi-tenancy Strategies:**\n1. **Shared Database, Shared Schema**: Single DB with tenant_id columns\n2. **Shared Database, Separate Schemas**: One DB, schema per tenant\n3. **Separate Databases**: Complete isolation per tenant\n\n**For Hierarchical Data:**\n- Adjacency List (simple parent_id)\n- Nested Sets (for read-heavy workloads)\n- Path Enumeration (materialized paths)\n- Closure Tables (most flexible)\n\nWhat's your expected tenant count and data complexity?"),
-            FFMessage(role=MessageRole.USER, content="We're expecting 100-1000 tenants initially, with complex organizational hierarchies (companies -> departments -> teams -> users). Read operations are much more frequent than writes."),
-            FFMessage(role=MessageRole.ASSISTANT, content="Perfect! For your use case, I'd recommend:\n\n**Multi-tenancy**: Shared database, shared schema with tenant_id\n- Easier to manage and scale initially\n- Row-level security policies for data isolation\n- Composite indexes on (tenant_id, other_columns)\n\n**Hierarchical Data**: Closure Table approach\n```sql\nCREate TABLE organizational_units (\n  id UUID PRIMARY KEY,\n  tenant_id UUID NOT NULL,\n  name VARCHAR(255),\n  unit_type ENUM('company', 'department', 'team')\n);\n\nCREATE TABLE organizational_paths (\n  tenant_id UUID NOT NULL,\n  ancestor_id UUID NOT NULL,\n  descendant_id UUID NOT NULL,\n  depth INTEGER NOT NULL,\n  PRIMARY KEY (tenant_id, ancestor_id, descendant_id)\n);\n```\n\nThis gives you:\n- O(1) subtree queries\n- Efficient ancestor/descendant lookups\n- Easy to maintain with triggers\n\nWould you like me to elaborate on the indexing strategy?"),
-            FFMessage(role=MessageRole.USER, content="Yes, and I'm also curious about handling permissions in this hierarchical structure.")
+            FFMessageDTO(role=MessageRole.USER, content="I need to design a database for a multi-tenant SaaS application with complex hierarchical data. What approach would you recommend?"),
+            FFMessageDTO(role=MessageRole.ASSISTANT, content="For multi-tenant SaaS with hierarchical data, you have several architecture options:\n\n**Multi-tenancy Strategies:**\n1. **Shared Database, Shared Schema**: Single DB with tenant_id columns\n2. **Shared Database, Separate Schemas**: One DB, schema per tenant\n3. **Separate Databases**: Complete isolation per tenant\n\n**For Hierarchical Data:**\n- Adjacency List (simple parent_id)\n- Nested Sets (for read-heavy workloads)\n- Path Enumeration (materialized paths)\n- Closure Tables (most flexible)\n\nWhat's your expected tenant count and data complexity?"),
+            FFMessageDTO(role=MessageRole.USER, content="We're expecting 100-1000 tenants initially, with complex organizational hierarchies (companies -> departments -> teams -> users). Read operations are much more frequent than writes."),
+            FFMessageDTO(role=MessageRole.ASSISTANT, content="Perfect! For your use case, I'd recommend:\n\n**Multi-tenancy**: Shared database, shared schema with tenant_id\n- Easier to manage and scale initially\n- Row-level security policies for data isolation\n- Composite indexes on (tenant_id, other_columns)\n\n**Hierarchical Data**: Closure Table approach\n```sql\nCREate TABLE organizational_units (\n  id UUID PRIMARY KEY,\n  tenant_id UUID NOT NULL,\n  name VARCHAR(255),\n  unit_type ENUM('company', 'department', 'team')\n);\n\nCREATE TABLE organizational_paths (\n  tenant_id UUID NOT NULL,\n  ancestor_id UUID NOT NULL,\n  descendant_id UUID NOT NULL,\n  depth INTEGER NOT NULL,\n  PRIMARY KEY (tenant_id, ancestor_id, descendant_id)\n);\n```\n\nThis gives you:\n- O(1) subtree queries\n- Efficient ancestor/descendant lookups\n- Easy to maintain with triggers\n\nWould you like me to elaborate on the indexing strategy?"),
+            FFMessageDTO(role=MessageRole.USER, content="Yes, and I'm also curious about handling permissions in this hierarchical structure.")
         ]
         
         # Messages for Data Analysis Strategy
         analysis_messages = [
-            FFMessage(role=MessageRole.USER, content="I have a dataset with customer behavior data and need to identify patterns that predict churn. What statistical approaches should I consider?"),
-            FFMessage(role=MessageRole.ASSISTANT, content="Customer churn prediction is a classic problem with several effective approaches. Let me suggest a systematic strategy:\n\n**1. Exploratory Data Analysis**\n- Churn rate by customer segments\n- Feature distributions for churned vs retained customers\n- Correlation analysis between features\n- Time series analysis of behavior changes\n\n**2. Feature Engineering**\n- Recency, Frequency, Monetary (RFM) analysis\n- Trend features (declining usage patterns)\n- Interaction terms between key variables\n- Time-based aggregations (last 30/60/90 days)\n\n**3. Statistical Models**\n- Logistic Regression (interpretable baseline)\n- Survival Analysis (time-to-churn)\n- Random Forest (feature importance)\n- XGBoost (usually best performance)\n\nWhat's your dataset size and available features?"),
-            FFMessage(role=MessageRole.USER, content="I have about 50,000 customers with 2 years of data. Features include usage metrics, support interactions, billing history, and demographic info."),
-            FFMessage(role=MessageRole.ASSISTANT, content="Great dataset size for robust modeling! With 2 years of data, you can implement some powerful techniques:\n\n**Time-based Validation Strategy:**\n```\nTrain: Months 1-18\nValidation: Months 19-21  \nTest: Months 22-24\n```\n\n**Key Feature Engineering:**\n1. **Usage Trends**: Month-over-month changes in key metrics\n2. **Support Interaction Patterns**: Frequency, resolution time, sentiment\n3. **Billing Behavior**: Payment delays, plan changes, discount usage\n4. **Lifecycle Features**: Customer age, onboarding completion\n\n**Model Ensemble Approach:**\n- XGBoost for performance\n- Logistic Regression for interpretability  \n- Survival model for time-to-churn insights\n\n**Evaluation Metrics:**\n- Precision/Recall at different thresholds\n- AUC-ROC and AUC-PR\n- Business metrics: Cost of false positives vs false negatives\n\nWould you like me to elaborate on any specific modeling technique?")
+            FFMessageDTO(role=MessageRole.USER, content="I have a dataset with customer behavior data and need to identify patterns that predict churn. What statistical approaches should I consider?"),
+            FFMessageDTO(role=MessageRole.ASSISTANT, content="Customer churn prediction is a classic problem with several effective approaches. Let me suggest a systematic strategy:\n\n**1. Exploratory Data Analysis**\n- Churn rate by customer segments\n- Feature distributions for churned vs retained customers\n- Correlation analysis between features\n- Time series analysis of behavior changes\n\n**2. Feature Engineering**\n- Recency, Frequency, Monetary (RFM) analysis\n- Trend features (declining usage patterns)\n- Interaction terms between key variables\n- Time-based aggregations (last 30/60/90 days)\n\n**3. Statistical Models**\n- Logistic Regression (interpretable baseline)\n- Survival Analysis (time-to-churn)\n- Random Forest (feature importance)\n- XGBoost (usually best performance)\n\nWhat's your dataset size and available features?"),
+            FFMessageDTO(role=MessageRole.USER, content="I have about 50,000 customers with 2 years of data. Features include usage metrics, support interactions, billing history, and demographic info."),
+            FFMessageDTO(role=MessageRole.ASSISTANT, content="Great dataset size for robust modeling! With 2 years of data, you can implement some powerful techniques:\n\n**Time-based Validation Strategy:**\n```\nTrain: Months 1-18\nValidation: Months 19-21  \nTest: Months 22-24\n```\n\n**Key Feature Engineering:**\n1. **Usage Trends**: Month-over-month changes in key metrics\n2. **Support Interaction Patterns**: Frequency, resolution time, sentiment\n3. **Billing Behavior**: Payment delays, plan changes, discount usage\n4. **Lifecycle Features**: Customer age, onboarding completion\n\n**Model Ensemble Approach:**\n- XGBoost for performance\n- Logistic Regression for interpretability  \n- Survival model for time-to-churn insights\n\n**Evaluation Metrics:**\n- Precision/Recall at different thresholds\n- AUC-ROC and AUC-PR\n- Business metrics: Cost of false positives vs false negatives\n\nWould you like me to elaborate on any specific modeling technique?")
         ]
         
         # Paper Review Session messages
         paper_messages = [
-            FFMessage(role=MessageRole.USER, content="I just read the latest Attention is All You Need follow-up papers. The improvements in efficiency are impressive, but I'm wondering about the trade-offs."),
-            FFMessage(role=MessageRole.ASSISTANT, content="The recent transformer efficiency improvements are indeed fascinating! Which specific papers are you referring to? Are you looking at:\n\n- **Sparse Attention** patterns (BigBird, Longformer)\n- **Linear Attention** approximations (Performer, Linear Transformer)\n- **Low-rank Approximations** (Linformer, FNet)\n- **Retrieval-based** approaches (RAG, FiD)\n\nEach has different trade-offs in terms of accuracy, memory, and computational requirements."),
-            FFMessage(role=MessageRole.USER, content="Primarily the sparse attention work - BigBird and Longformer. I'm curious about when the performance trade-offs become significant."),
-            FFMessage(role=MessageRole.ASSISTANT, content="Great choice! Both BigBird and Longformer address the O(n²) attention bottleneck cleverly:\n\n**BigBird's Approach:**\n- Random + Window + Global attention\n- Maintains theoretical expressiveness\n- ~8x memory reduction for long sequences\n\n**Longformer's Approach:**\n- Sliding window + task-specific global attention\n- More flexible global attention pattern\n- Better for document-level tasks\n\n**Performance Trade-offs:**\n- **Minimal impact** on tasks where local context dominates (NER, POS tagging)\n- **Some degradation** on tasks requiring long-range dependencies (some QA, summarization)\n- **Sequence length threshold**: Benefits most apparent >4k tokens\n\n**Key Insights from Papers:**\n- Window size matters more than random connections\n- Global attention placement is task-dependent\n- Pre-training with sparse patterns crucial for best results\n\nWhat specific tasks are you considering these for?")
+            FFMessageDTO(role=MessageRole.USER, content="I just read the latest Attention is All You Need follow-up papers. The improvements in efficiency are impressive, but I'm wondering about the trade-offs."),
+            FFMessageDTO(role=MessageRole.ASSISTANT, content="The recent transformer efficiency improvements are indeed fascinating! Which specific papers are you referring to? Are you looking at:\n\n- **Sparse Attention** patterns (BigBird, Longformer)\n- **Linear Attention** approximations (Performer, Linear Transformer)\n- **Low-rank Approximations** (Linformer, FNet)\n- **Retrieval-based** approaches (RAG, FiD)\n\nEach has different trade-offs in terms of accuracy, memory, and computational requirements."),
+            FFMessageDTO(role=MessageRole.USER, content="Primarily the sparse attention work - BigBird and Longformer. I'm curious about when the performance trade-offs become significant."),
+            FFMessageDTO(role=MessageRole.ASSISTANT, content="Great choice! Both BigBird and Longformer address the O(n²) attention bottleneck cleverly:\n\n**BigBird's Approach:**\n- Random + Window + Global attention\n- Maintains theoretical expressiveness\n- ~8x memory reduction for long sequences\n\n**Longformer's Approach:**\n- Sliding window + task-specific global attention\n- More flexible global attention pattern\n- Better for document-level tasks\n\n**Performance Trade-offs:**\n- **Minimal impact** on tasks where local context dominates (NER, POS tagging)\n- **Some degradation** on tasks requiring long-range dependencies (some QA, summarization)\n- **Sequence length threshold**: Benefits most apparent >4k tokens\n\n**Key Insights from Papers:**\n- Window size matters more than random connections\n- Global attention placement is task-dependent\n- Pre-training with sparse patterns crucial for best results\n\nWhat specific tasks are you considering these for?")
         ]
         
         # Store messages for each session
@@ -1108,7 +1108,7 @@ This guide provides a foundation for statistical analysis in data science. Remem
         for search_config in text_searches:
             self.log(f"  🔍 Searching for: '{search_config['query']}'")
             
-            search_query = SearchQuery(
+            search_query = FFSearchQuery(
                 query=search_config["query"],
                 user_id="alice_researcher",  # Search as Alice
                 include_documents=True
@@ -1274,10 +1274,10 @@ This guide provides a foundation for statistical analysis in data science. Remem
         
         # Try new configuration system
         try:
-            from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfig
+            from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
             
             self.log("\nNew Modular Configuration System:")
-            new_config = FFConfigurationManagerConfig.from_environment("development") 
+            new_config = FFConfigurationManagerConfigDTO.from_environment("development") 
             
             self.log(f"  Environment: {new_config.environment}")
             self.log(f"  Storage Path: {new_config.storage.base_path}")
@@ -1323,7 +1323,7 @@ This guide provides a foundation for statistical analysis in data science. Remem
         # Store multiple messages
         message_count = 50
         for i in range(message_count):
-            message = FFMessage(
+            message = FFMessageDTO(
                 role=MessageRole.USER if i % 2 == 0 else MessageRole.ASSISTANT,
                 content=f"This is benchmark message number {i+1}. " * 5  # Make messages longer
             )
@@ -1341,7 +1341,7 @@ This guide provides a foundation for statistical analysis in data science. Remem
         self.log("\nBenchmarking search performance...")
         start_time = time.time()
         
-        search_query = SearchQuery(
+        search_query = FFSearchQuery(
             query="benchmark message",
             user_id="alice_researcher",
             session_ids=[benchmark_session_id]

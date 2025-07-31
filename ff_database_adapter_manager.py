@@ -15,13 +15,13 @@ from abc import ABC, abstractmethod
 
 from ff_config_legacy_adapter import StorageConfig
 from ff_storage_manager import FFStorageManager
-from ff_class_configs.ff_chat_entities_config import FFMessage, FFSession, FFDocument, FFSituationalContext, FFUserProfile
-from ff_streaming_manager import FFExportStreamerManager, StreamConfig
-from ff_compression_manager import FFFFCompressionManager, FFFFCompressionConfig, FFCompressionType
+from ff_class_configs.ff_chat_entities_config import FFMessageDTO, FFSessionDTO, FFDocumentDTO, FFSituationalContextDTO, FFUserProfileDTO
+from ff_streaming_manager import FFExportStreamerManager, FFStreamConfigDTO
+from ff_compression_manager import FFFFCompressionManager, FFFFCompressionConfigDTO, FFCompressionType
 
 
 @dataclass
-class FFMigrationStats:
+class FFMigrationStatsDTO:
     """Statistics for migration operations"""
     total_users: int = 0
     total_sessions: int = 0
@@ -354,7 +354,7 @@ class FFFlatfileExporter:
     """
     
     def __init__(self, storage_manager: FFStorageManager,
-                 compression_config: Optional[FFCompressionConfig] = None):
+                 compression_config: Optional[FFFFCompressionConfigDTO] = None):
         """
         Initialize exporter.
         
@@ -369,7 +369,7 @@ class FFFlatfileExporter:
     
     async def export_to_database(self, adapter: FFDatabaseAdapterManager,
                                user_filter: Optional[List[str]] = None,
-                               progress_callback: Optional[Callable[[str, int, int], None]] = None) -> FFMigrationStats:
+                               progress_callback: Optional[Callable[[str, int, int], None]] = None) -> FFMigrationStatsDTO:
         """
         Export all data to a database.
         
@@ -381,7 +381,7 @@ class FFFlatfileExporter:
         Returns:
             Migration statistics
         """
-        stats = FFMigrationStats()
+        stats = FFMigrationStatsDTO()
         
         try:
             # Initialize database
@@ -416,7 +416,7 @@ class FFFlatfileExporter:
     
     async def export_to_json(self, output_path: Path,
                            user_filter: Optional[List[str]] = None,
-                           compress: bool = True) -> FFMigrationStats:
+                           compress: bool = True) -> FFMigrationStatsDTO:
         """
         Export all data to JSON format.
         
@@ -428,7 +428,7 @@ class FFFlatfileExporter:
         Returns:
             Migration statistics
         """
-        stats = FFMigrationStats()
+        stats = FFMigrationStatsDTO()
         
         # Prepare output
         output_data = {
@@ -583,7 +583,7 @@ class FFDatabaseImporter:
         self.config = storage_manager.config
     
     async def import_from_json(self, json_path: Path,
-                             user_filter: Optional[List[str]] = None) -> FFMigrationStats:
+                             user_filter: Optional[List[str]] = None) -> FFMigrationStatsDTO:
         """
         Import data from JSON export.
         
@@ -594,7 +594,7 @@ class FFDatabaseImporter:
         Returns:
             Migration statistics
         """
-        stats = FFMigrationStats()
+        stats = FFMigrationStatsDTO()
         
         try:
             # Load JSON data

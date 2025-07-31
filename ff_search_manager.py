@@ -13,13 +13,13 @@ from dataclasses import dataclass, field
 import re
 from collections import defaultdict, Counter
 
-from ff_config_legacy_adapter import StorageConfig
-from ff_class_configs.ff_chat_entities_config import FFMessage, FFSession, FFDocument, FFSituationalContext, SearchType
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
+from ff_class_configs.ff_chat_entities_config import FFMessageDTO, FFSessionDTO, FFDocumentDTO, FFSituationalContextDTO, SearchType
 from ff_utils import ff_read_json, ff_read_jsonl, ff_get_user_path
 
 
 @dataclass
-class SearchQuery:
+class FFSearchQueryDTO:
     """Advanced search query parameters"""
     query: str
     user_id: Optional[str] = None
@@ -43,7 +43,7 @@ class SearchQuery:
 
 
 @dataclass
-class SearchResult:
+class FFSearchResultDTO:
     """Search result with metadata and scoring"""
     id: str
     type: str  # "message", "document", "context"
@@ -68,7 +68,7 @@ class FFSearchManager:
     time-based filtering, and relevance ranking.
     """
     
-    def __init__(self, config: StorageConfig):
+    def __init__(self, config: FFConfigurationManagerConfigDTO):
         """
         Initialize search manager.
         
@@ -76,7 +76,7 @@ class FFSearchManager:
             config: Storage configuration
         """
         self.config = config
-        self.base_path = Path(config.storage_base_path)
+        self.base_path = Path(config.storage.base_path)
         
         # Compile regex patterns for entity extraction
         self.entity_patterns = {
@@ -88,7 +88,7 @@ class FFSearchManager:
             "numbers": re.compile(r'\b\d+\.?\d*\b'),
         }
     
-    async def search(self, query: SearchQuery) -> List[SearchResult]:
+    async def search(self, query: FFSearchQueryDTO) -> List[FFSearchResultDTO]:
         """
         Execute advanced search across the database.
         
@@ -121,7 +121,7 @@ class FFSearchManager:
     
     async def search_by_entities(self, entities: Dict[str, List[str]], 
                                 user_id: Optional[str] = None,
-                                limit: int = 100) -> List[SearchResult]:
+                                limit: int = 100) -> List[FFSearchResultDTO]:
         """
         Search for messages containing specific entities.
         
@@ -133,7 +133,7 @@ class FFSearchManager:
         Returns:
             List of search results
         """
-        query = SearchQuery(
+        query = FFSearchQueryDTO(
             query="",  # No text query
             user_id=user_id,
             entities=entities,
@@ -145,7 +145,7 @@ class FFSearchManager:
     async def search_by_time_range(self, start_date: datetime, end_date: datetime,
                                   user_id: Optional[str] = None,
                                   query_text: Optional[str] = None,
-                                  limit: int = 100) -> List[SearchResult]:
+                                  limit: int = 100) -> List[FFSearchResultDTO]:
         """
         Search within a specific time range.
         
@@ -159,7 +159,7 @@ class FFSearchManager:
         Returns:
             List of search results
         """
-        query = SearchQuery(
+        query = FFSearchQueryDTO(
             query=query_text or "",
             user_id=user_id,
             start_date=start_date,
@@ -258,15 +258,15 @@ class FFSearchManager:
             if path.is_dir() and not path.name.startswith('.'):
                 # Skip system directories
                 if path.name not in [
-                    self.config.panel_sessions_directory_name,
-                    self.config.global_personas_directory_name,
-                    self.config.system_config_directory_name
+                    self.config.panel.panel_sessions_directory,
+                    self.config.panel.global_personas_directory,
+                    self.config.storage.system_config_directory
                 ]:
                     users.append(path.name)
         
         return users
     
-    async def _search_user(self, user_id: str, query: SearchQuery) -> List[SearchResult]:
+    async def _search_user(self, user_id: str, query: FFSearchQueryDTO) -> List[FFSearchResultDTO]:
         """Search within a specific user's data"""
         results = []
         
@@ -300,7 +300,7 @@ class FFSearchManager:
         return sessions
     
     async def _search_session(self, user_id: str, session_id: str, 
-                            query: SearchQuery) -> List[SearchResult]:
+                            query: FFSearchQueryDTO) -> List[FFSearchResultDTO]:
         """Search within a specific session"""
         results = []
         
@@ -335,7 +335,7 @@ class FFSearchManager:
         return results
     
     async def _search_messages(self, user_id: str, session_id: str,
-                             messages_file: Path, query: SearchQuery) -> List[SearchResult]:
+                             messages_file: Path, query: FFSearchQueryDTO) -> List[FFSearchResultDTO]:
         """Search messages in a session"""
         results = []
         
@@ -344,7 +344,7 @@ class FFSearchManager:
         
         for msg_data in messages_data:
             try:
-                msg = FFMessage.from_dict(msg_data)
+                msg = FFMessageDTO.from_dict(msg_data)
                 
                 # Apply filters
                 if not self._message_matches_filters(msg, query):
@@ -354,7 +354,7 @@ class FFSearchManager:
                 score, highlights = self._calculate_relevance(msg.content, query)
                 
                 if score > 0 or not query.query:  # Include all if no text query
-                    result = SearchResult(
+                    result = FFSearchResultDTO(
                         id=msg.message_id,
                         type="message",
                         content=msg.content,
@@ -374,7 +374,7 @@ class FFSearchManager:
         return results
     
     async def _search_documents(self, user_id: str, session_id: str,
-                              docs_dir: Path, query: SearchQuery) -> List[SearchResult]:
+                              docs_dir: Path, query: FFSearchQueryDTO) -> List[FFSearchResultDTO]:
         """Search documents in a session"""
         results = []
         
@@ -387,7 +387,7 @@ class FFSearchManager:
         
         for doc_id, doc_data in docs_metadata.items():
             try:
-                doc = FFDocument.from_dict(doc_data)
+                doc = FFDocumentDTO.from_dict(doc_data)
                 
                 # Check time filter
                 if not self._matches_time_filter(doc.uploaded_at, query):
@@ -407,7 +407,7 @@ class FFSearchManager:
                 score, highlights = self._calculate_relevance(search_text, query)
                 
                 if score > 0 or not query.query:
-                    result = SearchResult(
+                    result = FFSearchResultDTO(
                         id=doc.filename,
                         type="document",
                         content=search_text[:500],  # Limit content size
@@ -431,7 +431,7 @@ class FFSearchManager:
         return results
     
     async def _search_context(self, user_id: str, session_id: str,
-                            session_path: Path, query: SearchQuery) -> List[SearchResult]:
+                            session_path: Path, query: FFSearchQueryDTO) -> List[FFSearchResultDTO]:
         """Search situational context"""
         results = []
         
@@ -441,7 +441,7 @@ class FFSearchManager:
             context_data = await ff_read_json(context_file, self.config)
             if context_data:
                 try:
-                    context = FFSituationalContext.from_dict(context_data)
+                    context = FFSituationalContextDTO.from_dict(context_data)
                     result = await self._search_single_context(
                         user_id, session_id, context, "current", query
                     )
@@ -457,7 +457,7 @@ class FFSearchManager:
                 context_data = await ff_read_json(snapshot_file, self.config)
                 if context_data:
                     try:
-                        context = FFSituationalContext.from_dict(context_data)
+                        context = FFSituationalContextDTO.from_dict(context_data)
                         result = await self._search_single_context(
                             user_id, session_id, context, 
                             snapshot_file.stem, query
@@ -470,8 +470,8 @@ class FFSearchManager:
         return results
     
     async def _search_single_context(self, user_id: str, session_id: str,
-                                   context: FFSituationalContext, context_id: str,
-                                   query: SearchQuery) -> Optional[SearchResult]:
+                                   context: FFSituationalContextDTO, context_id: str,
+                                   query: FFSearchQueryDTO) -> Optional[FFSearchResultDTO]:
         """Search a single context object"""
         # Check time filter
         if not self._matches_time_filter(context.timestamp, query):
@@ -494,7 +494,7 @@ class FFSearchManager:
         score, highlights = self._calculate_relevance(search_text, query)
         
         if score > 0 or not query.query:
-            return SearchResult(
+            return FFSearchResultDTO(
                 id=context_id,
                 type="context",
                 content=context.summary,
@@ -531,7 +531,7 @@ class FFSearchManager:
             
             for msg_data in messages:
                 try:
-                    msg = FFMessage.from_dict(msg_data)
+                    msg = FFMessageDTO.from_dict(msg_data)
                     
                     # Extract entities
                     entities = await self.extract_entities(msg.content)
@@ -557,7 +557,7 @@ class FFSearchManager:
         
         return session_data
     
-    def _message_matches_filters(self, message: FFMessage, query: SearchQuery) -> bool:
+    def _message_matches_filters(self, message: FFMessageDTO, query: FFSearchQueryDTO) -> bool:
         """Check if message matches query filters"""
         # Role filter
         if query.message_roles and message.role not in query.message_roles:
@@ -569,7 +569,7 @@ class FFSearchManager:
         
         return True
     
-    def _matches_time_filter(self, timestamp: str, query: SearchQuery) -> bool:
+    def _matches_time_filter(self, timestamp: str, query: FFSearchQueryDTO) -> bool:
         """Check if timestamp matches time range filter"""
         if not query.start_date and not query.end_date:
             return True
@@ -601,7 +601,7 @@ class FFSearchManager:
         
         return True
     
-    def _calculate_relevance(self, text: str, query: SearchQuery) -> Tuple[float, List[Tuple[int, int]]]:
+    def _calculate_relevance(self, text: str, query: FFSearchQueryDTO) -> Tuple[float, List[Tuple[int, int]]]:
         """
         Calculate relevance score and find highlight positions.
         
@@ -655,10 +655,10 @@ class FFSearchManager:
         # Remove punctuation and split
         words = re.findall(r'\b\w+\b', text.lower())
         # Filter out very short words using configured minimum length
-        min_length = self.config.search_min_word_length
+        min_length = self.config.search.min_word_length
         return [w for w in words if len(w) >= min_length]
     
-    async def vector_search(self, query: SearchQuery) -> List[SearchResult]:
+    async def vector_search(self, query: FFSearchQueryDTO) -> List[FFSearchResultDTO]:
         """
         Execute vector-based semantic search.
         
@@ -688,7 +688,7 @@ class FFSearchManager:
         
         return results
     
-    async def search_enhanced(self, query: SearchQuery) -> List[SearchResult]:
+    async def search_enhanced(self, query: FFSearchQueryDTO) -> List[FFSearchResultDTO]:
         """
         Enhanced search with vector support.
         
@@ -719,3 +719,8 @@ class FFSearchManager:
         else:
             # Use traditional text search
             return await self.search(query)
+
+
+# Backward compatibility aliases for demo files  
+FFSearchQuery = FFSearchQueryDTO
+FFSearchResult = FFSearchResultDTO

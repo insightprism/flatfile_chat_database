@@ -8,11 +8,11 @@ with the new configuration structure during migration.
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 
-from .ff_configuration_manager_config import FFConfigurationManagerConfig
+from .ff_configuration_manager_config import FFConfigurationManagerConfigDTO
 
 
 @dataclass
-class FFLegacyStorageConfig:
+class FFLegacyStorageConfigDTO:
     """
     Legacy StorageConfig adapter that maps to new configuration structure.
     
@@ -21,7 +21,7 @@ class FFLegacyStorageConfig:
     domain-specific configurations.
     """
     
-    def __init__(self, manager: Optional[FFConfigurationManagerConfig] = None, **kwargs):
+    def __init__(self, manager: Optional[FFConfigurationManagerConfigDTO] = None, **kwargs):
         """
         Initialize legacy config adapter.
         
@@ -29,7 +29,7 @@ class FFLegacyStorageConfig:
             manager: Configuration manager instance
             **kwargs: Legacy configuration values
         """
-        self._manager = manager or FFConfigurationManagerConfig()
+        self._manager = manager or FFConfigurationManagerConfigDTO()
         
         # Apply any provided kwargs to appropriate domains
         if kwargs:
@@ -297,12 +297,12 @@ class FFLegacyStorageConfig:
 
 
 # Compatibility aliases
-StorageConfig = FFLegacyStorageConfig
-DevelopmentConfig = lambda: FFLegacyStorageConfig(FFConfigurationManagerConfig.from_environment("development"))
-ProductionConfig = lambda: FFLegacyStorageConfig(FFConfigurationManagerConfig.from_environment("production"))
+StorageConfig = FFLegacyStorageConfigDTO
+DevelopmentConfig = lambda: FFLegacyStorageConfigDTO(FFConfigurationManagerConfigDTO.from_environment("development"))
+ProductionConfig = lambda: FFLegacyStorageConfigDTO(FFConfigurationManagerConfigDTO.from_environment("production"))
 
 
-def ff_load_config(config_path: Optional[str] = None, environment: Optional[str] = None) -> FFLegacyStorageConfig:
+def ff_load_config(config_path: Optional[str] = None, environment: Optional[str] = None) -> FFLegacyStorageConfigDTO:
     """
     Load configuration (legacy interface).
     
@@ -315,4 +315,4 @@ def ff_load_config(config_path: Optional[str] = None, environment: Optional[str]
     """
     from .ff_configuration_manager_config import load_config as load_new_config
     manager = load_new_config(config_path, environment)
-    return FFLegacyStorageConfig(manager)
+    return FFLegacyStorageConfigDTO(manager)

@@ -14,11 +14,11 @@ Philosophy: Maximum PrismMind reuse, minimal custom code, configuration-driven.
 """
 
 from .ff_prismmind_config import (
-    FFPrismMindConfig,
-    FFDocumentProcessingConfig,
-    FFEngineSelectionConfig,
-    FFHandlerStrategiesConfig,
-    FFIntegrationConfig
+    FFPrismMindConfigDTO,
+    FFDocumentProcessingConfigDTO,
+    FFEngineSelectionConfigDTO,
+    FFHandlerStrategiesConfigDTO,
+    FFIntegrationConfigDTO
 )
 
 from .ff_prismmind_storage_handlers import ff_store_vectors_handler_async
@@ -30,11 +30,11 @@ from .ff_prismmind_document_processor import FFDocumentProcessor
 from .ff_prismmind_config_loader import FFPrismMindConfigLoader
 
 __all__ = [
-    'FFPrismMindConfig',
-    'FFDocumentProcessingConfig', 
-    'FFEngineSelectionConfig',
-    'FFHandlerStrategiesConfig',
-    'FFIntegrationConfig',
+    'FFPrismMindConfigDTO',
+    'FFDocumentProcessingConfigDTO', 
+    'FFEngineSelectionConfigDTO',
+    'FFHandlerStrategiesConfigDTO',
+    'FFIntegrationConfigDTO',
     'ff_store_vectors_handler_async',
     'FFPrismMindConfigFactory',
     'FFDocumentProcessor',
