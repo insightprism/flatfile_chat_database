@@ -57,7 +57,7 @@ The notebook is organized into **12 main sections**, each building on the previo
 
 ### Section 3: Initialize Storage Manager
 **What it does**: Creates the main interface to the database
-**What you'll learn**: The StorageManager is your primary API
+**What you'll learn**: The FFStorageManager is your primary API
 **Key insight**: This one object handles all database operations
 
 ### Section 4: User Management

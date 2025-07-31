@@ -312,13 +312,13 @@ demo_data_*/
 ### Integration Examples
 ```python
 # Basic integration pattern (from Jupyter demo)
-from storage import StorageManager
-from config import StorageConfig
+from ff_storage_manager import FFStorageManager
+from ff_config_legacy_adapter import StorageConfig
 
 # Initialize
 config = StorageConfig()
 config.storage_base_path = "./my_data"
-storage = StorageManager(config)
+storage = FFStorageManager(config)
 
 # Use the APIs demonstrated in demos
 session_id = await storage.create_session("user123", "My Chat")
@@ -395,10 +395,10 @@ python3 script_name.py
 ### Documentation
 - **[Main README](../README.md)**: Project overview and setup
 - **[Architecture Summary](../ARCHITECTURE_UPGRADE_SUMMARY.md)**: System architecture details
-- **[Configuration Examples](../configs/)**: Sample configuration files
+- **[Configuration Examples](../ff_preset_configs/)**: Sample configuration files
 
 ### Source Code
-- **[Storage Manager](../storage.py)**: Main API implementation
+- **[Storage Manager](../ff_storage_manager.py)**: Main API implementation
 - **[Search Engine](../search.py)**: Search functionality
 - **[Models](../models.py)**: Data structure definitions
 - **[Configuration](../config.py)**: Configuration management

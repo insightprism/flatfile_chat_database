@@ -23,7 +23,7 @@ Created protocol-based interfaces for all major components:
 - `FileOperationsProtocol` - File I/O with locking
 
 ### 3. Dependency Injection Container ✅
-- `ServiceContainer` class with support for:
+- `FFDependencyInjectionManager` class with support for:
   - Transient services (new instance each time)
   - Singleton services (single instance)
   - Scoped services (single instance per scope)
@@ -63,7 +63,7 @@ Created protocol-based interfaces for all major components:
 ### For New Code
 ```python
 # Use new configuration system
-from config_new.manager import ConfigurationManager
+from ff_class_configs.manager import ConfigurationManager
 
 config = ConfigurationManager.from_environment("development")
 storage_config = config.storage
@@ -82,11 +82,11 @@ print(config.storage_base_path)
 
 ### Using Dependency Injection
 ```python
-from container import create_application_container
+from ff_dependency_injection_manager import ff_create_application_container
 from interfaces import StorageProtocol
 
 # Create container
-container = create_application_container()
+container = ff_create_application_container()
 
 # Resolve services
 storage = container.resolve(StorageProtocol)
@@ -113,9 +113,9 @@ search = container.resolve(SearchProtocol)
 ## Files Created/Modified
 
 ### New Files
-- `/config_new/` - New configuration package (9 files)
+- `/ff_class_configs/` - New configuration package (9 files)
 - `/interfaces/` - Protocol definitions (6 files)
-- `container.py` - Dependency injection container
+- `ff_dependency_injection_manager.py` - Dependency injection container
 - `test_new_architecture.py` - Architecture verification
 
 ### Modified Files

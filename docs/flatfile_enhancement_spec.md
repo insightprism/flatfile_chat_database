@@ -41,7 +41,7 @@ class Message:
 
 #### **New API Methods**
 ```python
-class StorageManager:
+class FFStorageManager:
     async def create_conversation_thread(self, initial_message: Message) -> str:
         """Create new conversation thread, returns thread_id"""
         
@@ -88,7 +88,7 @@ class AgentMemory:
 
 #### **New API Methods**
 ```python
-class StorageManager:
+class FFStorageManager:
     async def store_agent_memory(self, agent_id: str, memory: AgentMemory) -> bool:
         """Store agent memory with expiration and relevance"""
         
@@ -136,7 +136,7 @@ class SemanticSearchQuery:
 
 #### **New API Methods**
 ```python
-class StorageManager:
+class FFStorageManager:
     async def semantic_search_conversations(self, query: SemanticSearchQuery) -> List[SearchResult]:
         """Search conversations using semantic similarity"""
         
@@ -197,7 +197,7 @@ message.metadata.update({
 
 #### **New API Methods**
 ```python
-class StorageManager:
+class FFStorageManager:
     async def get_agent_tool_history(self, agent_id: str, days: int = 7) -> List[Tuple[ToolCall, ToolResult]]:
         """Get tool usage history for debugging/optimization"""
         
@@ -233,7 +233,7 @@ class ConversationAnalytics:
 
 #### **New API Methods**
 ```python
-class StorageManager:
+class FFStorageManager:
     async def store_conversation_analytics(self, analytics: ConversationAnalytics) -> bool:
         """Store conversation analysis results"""
         

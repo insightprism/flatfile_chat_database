@@ -25,12 +25,12 @@ if os.path.exists(prismmind_path):
 else:
     print(f"⚠️ PrismMind not found at: {prismmind_path} - will use legacy document processing")
 
-from storage import StorageManager
-from config import StorageConfig
-from models import Message, Session, Document, UserProfile, MessageRole
-from search import SearchQuery, AdvancedSearchEngine
-from vector_storage import FlatfileVectorStorage
-from document_pipeline import DocumentRAGPipeline
+from ff_storage_manager import FFStorageManager
+from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_chat_entities_config import FFMessage, FFSession, FFDocument, FFUserProfile, MessageRole
+from ff_search_manager import SearchQuery, FFSearchManager
+from ff_vector_storage_manager import FFVectorStorageManager
+from ff_document_processing_manager import FFDocumentProcessingManager
 
 
 class InteractiveDemo:
@@ -59,9 +59,9 @@ class InteractiveDemo:
         self.config.enable_file_locking = True
         
         # Initialize components
-        self.storage_manager = StorageManager(self.config)
-        self.search_engine = AdvancedSearchEngine(self.config)
-        self.vector_storage = FlatfileVectorStorage(self.config)
+        self.storage_manager = FFStorageManager(self.config)
+        self.search_engine = FFSearchManager(self.config)
+        self.vector_storage = FFVectorStorageManager(self.config)
         
         print(f"✅ Demo initialized! Data will be stored in: {self.demo_data_path}")
         
@@ -138,9 +138,9 @@ class InteractiveDemo:
             metadata["role"] = role
             
         # Create user profile
-        profile = UserProfile(
+        profile = FFUserProfile(
             user_id=user_id,
-            display_name=display_name,
+            username=display_name,
             preferences={"theme": "dark", "language": "en"},
             metadata=metadata
         )
@@ -318,7 +318,7 @@ class InteractiveDemo:
                         session_data = json.load(f)
                     
                     # Create session object
-                    self.current_session = Session(
+                    self.current_session = FFSession(
                         session_id=session_id,
                         user_id=self.current_user,
                         title=session_data.get('title', 'Untitled'),
@@ -368,7 +368,7 @@ class InteractiveDemo:
             return
             
         try:
-            message = Message(role=role, content=content)
+            message = FFMessage(role=role, content=content)
             await self.storage_manager.store_message(
                 self.current_session.session_id,
                 self.current_user,
@@ -461,7 +461,7 @@ class InteractiveDemo:
             return
             
         try:
-            document = Document(
+            document = FFDocument(
                 filename=filename,
                 content=content,
                 metadata={"source": "manual_input", "created_by": self.current_user}
@@ -497,7 +497,7 @@ class InteractiveDemo:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
                 
-            document = Document(
+            document = FFDocument(
                 filename=file_path.name,
                 content=content,
                 metadata={"source": "file_upload", "original_path": str(file_path)}
@@ -797,8 +797,8 @@ class InteractiveDemo:
         
         # Try new config system
         try:
-            from config_new.manager import ConfigurationManager
-            new_config = ConfigurationManager.from_environment("development")
+            from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfig
+            new_config = FFConfigurationManagerConfig.from_environment("development")
             
             print(f"\nNew Modular Configuration:")
             print(f"  Environment: {new_config.environment}")
@@ -851,9 +851,9 @@ class InteractiveDemo:
         
         try:
             # Create test user
-            test_user = UserProfile(
+            test_user = FFUserProfile(
                 user_id="test_user",
-                display_name="Test User",
+                username="Test User",
                 metadata={"role": "tester"}
             )
             await self.storage_manager.store_user_profile(test_user)
@@ -867,7 +867,7 @@ class InteractiveDemo:
             print("✅ Created test session")
             
             # Add test message
-            message = Message(
+            message = FFMessage(
                 role=MessageRole.USER,
                 content="This is a test message for the quick test."
             )
@@ -875,7 +875,7 @@ class InteractiveDemo:
             print("✅ Added test message")
             
             # Add test document
-            document = Document(
+            document = FFDocument(
                 filename="test_doc.txt",
                 content="This is a test document containing important information about testing.",
                 metadata={"type": "test"}

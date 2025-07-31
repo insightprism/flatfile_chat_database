@@ -9,15 +9,15 @@ import asyncio
 from pathlib import Path
 
 # Test new configuration system
-from config_new.manager import ConfigurationManager, create_default_config
-from config_new.storage import StorageConfig as NewStorageConfig
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfig, create_default_config
+from ff_class_configs.ff_storage_config import FFStorageConfig as NewStorageConfig
 
 # Test backward compatibility
-from config import StorageConfig as LegacyStorageConfig, load_config
+from ff_config_legacy_adapter import StorageConfig as FFLegacyStorageConfig, ff_load_config
 
 # Test dependency injection
-from container import ServiceContainer, create_application_container
-from interfaces import StorageProtocol, SearchProtocol, VectorStoreProtocol
+from ff_dependency_injection_manager import FFDependencyInjectionManager, ff_create_application_container
+from ff_protocols import StorageProtocol, SearchProtocol, VectorStoreProtocol
 
 
 def test_new_config_system():
@@ -51,7 +51,7 @@ def test_backward_compatibility():
     print("Testing backward compatibility...")
     
     # Load config using old interface
-    config = LegacyStorageConfig()
+    config = FFLegacyStorageConfig()
     
     # Test old attribute access
     print(f"✓ storage_base_path: {config.storage_base_path}")
@@ -77,7 +77,7 @@ def test_dependency_injection():
     print("Testing dependency injection container...")
     
     # Create a test container
-    container = ServiceContainer()
+    container = FFDependencyInjectionManager()
     
     # Register a simple service
     class TestService:
@@ -94,7 +94,7 @@ def test_dependency_injection():
     print(f"✓ Singleton check: {service1 is service2}")
     
     # Test factory registration
-    def factory(c: ServiceContainer) -> TestService:
+    def factory(c: FFDependencyInjectionManager) -> TestService:
         service = TestService()
         service.name = "FactoryCreated"
         return service
@@ -116,16 +116,16 @@ async def test_application_container():
     
     try:
         # Create application container
-        container = create_application_container(environment="development")
+        container = ff_create_application_container(environment="development")
         print("✓ Created application container")
         
         # Resolve configuration
-        config = container.resolve(ConfigurationManager)
-        print(f"✓ Resolved ConfigurationManager: {config.storage.base_path}")
+        config = container.resolve(FFConfigurationManagerConfig)
+        print(f"✓ Resolved FFConfigurationManagerConfig: {config.storage.base_path}")
         
         # Check if services are registered
         services = [
-            ("ConfigurationManager", ConfigurationManager),
+            ("FFConfigurationManagerConfig", FFConfigurationManagerConfig),
             ("StorageProtocol", StorageProtocol),
             ("SearchProtocol", SearchProtocol),
             ("VectorStoreProtocol", VectorStoreProtocol)

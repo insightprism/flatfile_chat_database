@@ -232,13 +232,13 @@ To integrate the flatfile database into your own project:
 
 ```python
 # Basic integration example
-from storage import StorageManager
-from config import StorageConfig
+from ff_storage_manager import FFStorageManager
+from ff_config_legacy_adapter import StorageConfig
 
 # Initialize
 config = StorageConfig()
 config.storage_base_path = "./my_chat_data"
-storage = StorageManager(config)
+storage = FFStorageManager(config)
 
 # Use the API demonstrated in the demos
 user_profile = UserProfile(user_id="my_user", display_name="My User")
@@ -319,7 +319,7 @@ After exploring the demos:
 
 - **Main Project**: See the parent directory for full documentation
 - **Configuration Guide**: Check `ARCHITECTURE_UPGRADE_SUMMARY.md`
-- **Sample Configs**: Look in `../configs/` for configuration examples
+- **Sample Configs**: Look in `../ff_preset_configs/` for configuration examples
 - **Tests**: Review `../test_new_architecture.py` for more usage examples
 
 ## 🙏 Feedback

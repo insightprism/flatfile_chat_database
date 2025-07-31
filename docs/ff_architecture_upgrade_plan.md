@@ -216,7 +216,7 @@ Proper dependency injection with service container:
 # container.py
 from typing import Dict, Type, Any, Callable, Optional
 
-class ServiceContainer:
+class FFDependencyInjectionManager:
     """Dependency injection container"""
     def __init__(self):
         self._services: Dict[Type, Any] = {}
@@ -251,23 +251,23 @@ class ServiceContainer:
         raise ValueError(f"No implementation registered for {interface}")
 
 # Application bootstrap
-def create_application(config_path: Optional[str] = None) -> ServiceContainer:
+def ff_create_application_container(config_path: Optional[str] = None) -> FFDependencyInjectionManager:
     """Create and configure application container"""
-    container = ServiceContainer()
+    container = FFDependencyInjectionManager()
     
     # Load configuration
     config_manager = ConfigurationManager(config_path)
     container.register(ConfigurationManager, config_manager, singleton=True)
     
     # Register storage backend
-    def storage_factory(c: ServiceContainer) -> StorageProtocol:
+    def storage_factory(c: FFDependencyInjectionManager) -> StorageProtocol:
         config = c.resolve(ConfigurationManager)
         return FlatfileBackend(config.storage)
     
     container.register_factory(StorageProtocol, storage_factory)
     
     # Register search engine
-    def search_factory(c: ServiceContainer) -> SearchProtocol:
+    def search_factory(c: FFDependencyInjectionManager) -> SearchProtocol:
         config = c.resolve(ConfigurationManager)
         storage = c.resolve(StorageProtocol)
         return AdvancedSearchEngine(config.search, storage)
@@ -278,9 +278,9 @@ def create_application(config_path: Optional[str] = None) -> ServiceContainer:
 ```
 
 ### Implementation Steps
-1. Create `ServiceContainer` class
+1. Create `FFDependencyInjectionManager` class
 2. Create application bootstrap function
-3. Update `StorageManager` to use container
+3. Update `FFStorageManager` to use container
 4. Remove global state from file operations
 5. Update all entry points to use container
 
@@ -359,7 +359,7 @@ def _apply_pagination(self, results: List[SearchResult], query: SearchQuery) -> 
 1. `AdvancedSearchEngine.search()` - Break into 5-6 functions
 2. `FlatfilePrismMindConfigFactory.create_complete_processing_chain()` - Use builder pattern
 3. `FileOperationManager.execute()` - Separate validation, locking, execution
-4. `StorageManager` methods - Extract validation and error handling
+4. `FFStorageManager` methods - Extract validation and error handling
 
 ## Phase 5: Module Decoupling
 
@@ -459,7 +459,7 @@ class ConfigBuilder:
 # Example test
 async def test_search_with_filters():
     # Arrange
-    container = ServiceContainer()
+    container = FFDependencyInjectionManager()
     container.register(StorageProtocol, MockStorage(), singleton=True)
     container.register(ConfigurationManager, ConfigBuilder().build())
     

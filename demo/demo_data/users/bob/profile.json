@@ -1,0 +1,14 @@
+{
+  "created_at": "2025-07-31T13:15:23.647586",
+  "metadata": {
+    "department": "Engineering",
+    "role": "developer"
+  },
+  "preferences": {
+    "language": "en",
+    "theme": "light"
+  },
+  "updated_at": "2025-07-31T13:15:23.647602",
+  "user_id": "bob",
+  "username": "Bob Smith"
+}

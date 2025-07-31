@@ -13,32 +13,32 @@ Key Components:
 Philosophy: Maximum PrismMind reuse, minimal custom code, configuration-driven.
 """
 
-from flatfile_chat_database.prismmind_integration.config import (
-    FlatfilePrismMindConfig,
-    FlatfileDocumentProcessingConfig,
-    FlatfileEngineSelectionConfig,
-    FlatfileHandlerStrategiesConfig,
-    FlatfileIntegrationConfig
+from .ff_prismmind_config import (
+    FFPrismMindConfig,
+    FFDocumentProcessingConfig,
+    FFEngineSelectionConfig,
+    FFHandlerStrategiesConfig,
+    FFIntegrationConfig
 )
 
-from flatfile_chat_database.prismmind_integration.handlers import ff_store_vectors_handler_async
+from .ff_prismmind_storage_handlers import ff_store_vectors_handler_async
 
-from flatfile_chat_database.prismmind_integration.factory import FlatfilePrismMindConfigFactory
+from .ff_prismmind_engine_factory import FFPrismMindConfigFactory
 
-from flatfile_chat_database.prismmind_integration.processor import FlatfileDocumentProcessor
+from .ff_prismmind_document_processor import FFDocumentProcessor
 
-from flatfile_chat_database.prismmind_integration.loader import FlatfilePrismMindConfigLoader
+from .ff_prismmind_config_loader import FFPrismMindConfigLoader
 
 __all__ = [
-    'FlatfilePrismMindConfig',
-    'FlatfileDocumentProcessingConfig', 
-    'FlatfileEngineSelectionConfig',
-    'FlatfileHandlerStrategiesConfig',
-    'FlatfileIntegrationConfig',
+    'FFPrismMindConfig',
+    'FFDocumentProcessingConfig', 
+    'FFEngineSelectionConfig',
+    'FFHandlerStrategiesConfig',
+    'FFIntegrationConfig',
     'ff_store_vectors_handler_async',
-    'FlatfilePrismMindConfigFactory',
-    'FlatfileDocumentProcessor',
-    'FlatfilePrismMindConfigLoader'
+    'FFPrismMindConfigFactory',
+    'FFDocumentProcessor',
+    'FFPrismMindConfigLoader'
 ]
 
 __version__ = "1.0.0"

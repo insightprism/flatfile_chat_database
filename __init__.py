@@ -7,48 +7,48 @@ A simple, modular file-based storage solution for AI chat applications.
 __version__ = "0.1.0"
 __author__ = "Claude Code"
 
-from config import StorageConfig, load_config
-from models import (
-    Message, Session, Panel, SituationalContext, Document,
-    UserProfile, Persona, PanelMessage, PanelInsight,
-    VectorSearchResult, VectorMetadata, ProcessingResult, SearchType
+from ff_config_legacy_adapter import StorageConfig, ff_load_config
+from ff_class_configs.ff_chat_entities_config import (
+    FFMessage, FFSession, FFPanel, FFSituationalContext, FFDocument,
+    FFUserProfile, FFPersona, FFPanelMessage, FFPanelInsight,
+    FFVectorSearchResult, FFVectorMetadata, FFProcessingResult, SearchType
 )
-from storage import StorageManager
-from search import SearchQuery, SearchResult, AdvancedSearchEngine
-from vector_storage import FlatfileVectorStorage
-from chunking import ChunkingEngine, ChunkingStrategy
-from embedding import EmbeddingEngine, EmbeddingProvider
-from document_pipeline import DocumentRAGPipeline
+from ff_storage_manager import FFStorageManager
+from ff_search_manager import SearchQuery, SearchResult, FFSearchManager
+from ff_vector_storage_manager import FFVectorStorageManager
+from ff_chunking_manager import FFChunkingManager, FFChunkingConfig
+from ff_embedding_manager import FFEmbeddingManager, FFEmbeddingProvider
+from ff_document_processing_manager import FFDocumentProcessingManager
 
 __all__ = [
     # Main API
-    "StorageManager",
-    "DocumentRAGPipeline",
+    "FFStorageManager",
+    "FFDocumentProcessingManager",
     # Configuration
     "StorageConfig",
-    "load_config",
+    "ff_load_config",
     # Models
-    "Message",
-    "Session", 
-    "Panel",
-    "SituationalContext",
-    "Document",
-    "UserProfile",
-    "Persona",
-    "PanelMessage",
-    "PanelInsight",
-    "VectorSearchResult",
-    "VectorMetadata",
-    "ProcessingResult",
+    "FFMessage",
+    "FFSession", 
+    "FFPanel",
+    "FFSituationalContext",
+    "FFDocument",
+    "FFUserProfile",
+    "FFPersona",
+    "FFPanelMessage",
+    "FFPanelInsight",
+    "FFVectorSearchResult",
+    "FFVectorMetadata",
+    "FFProcessingResult",
     "SearchType",
     # Search
     "SearchQuery",
     "SearchResult",
-    "AdvancedSearchEngine",
+    "FFSearchManager",
     # Vector Components
-    "FlatfileVectorStorage",
-    "ChunkingEngine",
-    "ChunkingStrategy",
-    "EmbeddingEngine",
-    "EmbeddingProvider"
+    "FFVectorStorageManager",
+    "FFChunkingManager",
+    "FFChunkingConfig",
+    "FFEmbeddingManager",
+    "FFEmbeddingProvider"
 ]

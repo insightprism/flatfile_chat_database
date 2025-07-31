@@ -23,9 +23,9 @@ else:
     print(f"⚠️ PrismMind not found at: {prismmind_path} - will use legacy document processing")
 
 try:
-    from storage import StorageManager
-    from config import StorageConfig
-    from models import Message, Session, Document, UserProfile, MessageRole
+    from ff_storage_manager import FFStorageManager
+    from ff_config_legacy_adapter import StorageConfig
+    from ff_class_configs.ff_chat_entities_config import FFMessage, FFSession, FFDocument, FFUserProfile, MessageRole
     print("✅ All imports successful!")
 except ImportError as e:
     print(f"❌ Import error: {e}")
@@ -48,8 +48,8 @@ async def test_basic_functionality():
         config.enable_compression = False
         
         # Initialize storage manager
-        storage_manager = StorageManager(config)
-        print("✅ StorageManager initialized")
+        storage_manager = FFStorageManager(config)
+        print("✅ FFStorageManager initialized")
         
         # Test 1: Create user
         profile_data = {
@@ -70,8 +70,8 @@ async def test_basic_functionality():
         
         # Test 3: Store messages
         messages = [
-            Message(role=MessageRole.USER, content="Hello, this is a test message."),
-            Message(role=MessageRole.ASSISTANT, content="Hello! I can help you test the system.")
+            FFMessage(role=MessageRole.USER, content="Hello, this is a test message."),
+            FFMessage(role=MessageRole.ASSISTANT, content="Hello! I can help you test the system.")
         ]
         
         for msg in messages:
@@ -125,8 +125,8 @@ async def test_basic_functionality():
         
         # Test 7: Configuration systems
         try:
-            from config_new.manager import ConfigurationManager
-            new_config = ConfigurationManager.from_environment("development")
+            from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfig
+            new_config = FFConfigurationManagerConfig.from_environment("development")
             print("✅ New configuration system works")
         except ImportError:
             print("⚠️ New configuration system not available")
