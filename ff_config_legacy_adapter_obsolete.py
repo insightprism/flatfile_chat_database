@@ -41,29 +41,29 @@ BENEFITS OF NEW SYSTEM:
   print('✅ Cleanup successful - no legacy dependencies remain')
 
 """
-
-# TEMPORARY COMPATIBILITY STUBS - Keep imports working during transition
-from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO, load_config
-from ff_class_configs.ff_legacy_storage_config import FFLegacyStorageConfigDTO
-
-# Minimal compatibility exports
-StorageConfig = FFLegacyStorageConfigDTO
-StorageConfigDTO = FFLegacyStorageConfigDTO
-
-def ff_load_config(config_path=None, environment=None):
-    """Compatibility stub - redirects to new system"""
-    manager = load_config(config_path, environment)
-    return FFLegacyStorageConfigDTO(manager)
-
-def ff_load_configDTO(config_path=None, environment=None):
-    """Compatibility stub with DTO suffix"""
-    return ff_load_config(config_path, environment)
-
-"""
-# COMMENTED OUT - Original legacy adapter code
-# Uncomment this entire section to rollback to legacy system
-
-# from typing import Optional
+#
+# # TEMPORARY COMPATIBILITY STUBS - Keep imports working during transition
+# from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO, load_config
+# from ff_class_configs.ff_legacy_storage_config import FFLegacyStorageConfigDTO
+#
+# # Minimal compatibility exports
+# StorageConfig = FFLegacyStorageConfigDTO
+# StorageConfigDTO = FFLegacyStorageConfigDTO
+#
+# def ff_load_config(config_path=None, environment=None):
+#     """Compatibility stub - redirects to new system"""
+#     manager = load_config(config_path, environment)
+#     return FFLegacyStorageConfigDTO(manager)
+#
+# def ff_load_configDTO(config_path=None, environment=None):
+#     """Compatibility stub with DTO suffix"""
+#     return ff_load_config(config_path, environment)
+#
+# """
+# # COMMENTED OUT - Original legacy adapter code
+# # Uncomment this entire section to rollback to legacy system
+#
+# # from typing import Optional
 # from pathlib import Path
 
 # Import new configuration system

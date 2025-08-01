@@ -57,7 +57,7 @@ class FFVectorStorageManager:
         await ff_ensure_directory(vector_dir)
         
         # Load existing vectors if any
-        embeddings_path = vector_dir / self.config.embeddings_filename
+        embeddings_path = vector_dir / self.config.vector.embeddings_filename
         index_path = vector_dir / self.config.vector.index_filename
         
         if embeddings_path.exists():
@@ -87,7 +87,7 @@ class FFVectorStorageManager:
                     "word_count": len(chunk.split())
                 },
                 "embedding_metadata": {
-                    "provider": metadata.get("provider", self.config.default_embedding_provider) if metadata else self.config.default_embedding_provider,
+                    "provider": metadata.get("provider", self.config.vector.default_embedding_provider) if metadata else self.config.vector.default_embedding_provider,
                     "model": metadata.get("model", "nomic-embed-text-v1.5") if metadata else "nomic-embed-text-v1.5",
                     "dimensions": len(vector),
                     "normalized": metadata.get("normalized", True) if metadata else True,
@@ -122,7 +122,7 @@ class FFVectorStorageManager:
             Tuple of (embeddings array, index entries)
         """
         vector_dir = self._get_vector_path(session_id)
-        embeddings_path = vector_dir / self.config.embeddings_filename
+        embeddings_path = vector_dir / self.config.vector.embeddings_filename
         index_path = vector_dir / self.config.vector.index_filename
         
         if not embeddings_path.exists():
@@ -176,10 +176,15 @@ class FFVectorStorageManager:
         for idx in top_indices:
             if idx < len(index):
                 entry = index[idx]
+                # Normalize similarity score to [0, 1] range
+                # Cosine similarity ranges from -1 to 1, so we transform it to 0-1
+                raw_similarity = float(similarities[idx])
+                normalized_similarity = max(0.0, min(1.0, (raw_similarity + 1.0) / 2.0))
+                
                 result = FFVectorSearchResultDTO(
                     chunk_id=entry["chunk_id"],
                     chunk_text=entry["chunk_text"],
-                    similarity_score=float(similarities[idx]),
+                    similarity_score=normalized_similarity,
                     document_id=entry["document_id"],
                     session_id=entry["session_id"],
                     metadata=entry.get("chunk_metadata", {})
@@ -254,7 +259,7 @@ class FFVectorStorageManager:
         
         # Save filtered data
         vector_dir = self._get_vector_path(session_id)
-        embeddings_path = vector_dir / self.config.embeddings_filename
+        embeddings_path = vector_dir / self.config.vector.embeddings_filename
         index_path = vector_dir / self.config.vector.index_filename
         
         if len(keep_indices) > 0:
@@ -289,7 +294,7 @@ class FFVectorStorageManager:
         
         # Calculate storage size
         vector_dir = self._get_vector_path(session_id)
-        embeddings_path = vector_dir / self.config.embeddings_filename
+        embeddings_path = vector_dir / self.config.vector.embeddings_filename
         index_path = vector_dir / self.config.vector.index_filename
         
         storage_size = 0

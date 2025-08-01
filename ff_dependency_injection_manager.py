@@ -20,14 +20,14 @@ from ff_protocols import (
 T = TypeVar('T')
 
 
-class FFFFServiceLifetime:
+class FFServiceLifetime:
     """Service lifetime options."""
     TRANSIENT = "transient"  # New instance each time
     SINGLETON = "singleton"  # Single instance for container lifetime
     SCOPED = "scoped"       # Single instance per scope
 
 
-class FFFFServiceDescriptor:
+class FFServiceDescriptor:
     """Describes a registered service."""
     
     def __init__(self, 
@@ -35,7 +35,7 @@ class FFFFServiceDescriptor:
                  implementation: Optional[Type] = None,
                  factory: Optional[Callable] = None,
                  instance: Optional[Any] = None,
-                 lifetime: str = FFFFServiceLifetime.TRANSIENT,
+                 lifetime: str = FFServiceLifetime.TRANSIENT,
                  dependencies: Optional[List[Type]] = None):
         """
         Initialize service descriptor.
@@ -60,7 +60,7 @@ class FFFFServiceDescriptor:
             raise ValueError("Must provide implementation, factory, or instance")
 
 
-class FFFFServiceScope:
+class FFServiceScope:
     """Represents a dependency injection scope."""
     
     def __init__(self, container: 'FFDependencyInjectionManager'):
@@ -90,7 +90,7 @@ class FFFFServiceScope:
         # Get descriptor from container
         descriptor = self.container._get_descriptor(interface)
         
-        if descriptor.lifetime == FFFFServiceLifetime.SCOPED:
+        if descriptor.lifetime == FFServiceLifetime.SCOPED:
             # Create and cache scoped instance
             instance = self.container._create_instance(descriptor, scope=self)
             self.scoped_instances[interface] = instance
@@ -109,7 +109,7 @@ class FFDependencyInjectionManager:
     
     def __init__(self):
         """Initialize service container."""
-        self._descriptors: Dict[Type, FFFFServiceDescriptor] = {}
+        self._descriptors: Dict[Type, FFServiceDescriptor] = {}
         self._singletons: Dict[Type, Any] = {}
         self._lock = asyncio.Lock()
     
@@ -449,16 +449,52 @@ def ff_create_application_container(config_path: Optional[Union[str, Path]] = No
     return container
 
 
-# Global container instance (optional)
+# ===== GLOBAL CONTAINER SINGLETON PATTERN =====
+#
+# The global container provides a convenient singleton access pattern for the DI container
+# across the entire application. This is particularly useful for:
+#
+# 1. **Application-wide service resolution**: Access services from anywhere without 
+#    passing the container instance around
+# 2. **Legacy code integration**: Gradually migrate existing code to use DI
+# 3. **Testing isolation**: Each test can set its own container configuration
+# 4. **Configuration consistency**: Ensures all components use the same service instances
+#
+# Usage patterns:
+#   - Production: Container is auto-created with default configuration on first access
+#   - Testing: Set custom container with mocked services using ff_set_container()
+#   - Development: Container can be reconfigured at runtime for debugging
+#
+# Thread Safety: The container itself is thread-safe, but global access should be
+# initialized during application startup to avoid race conditions.
+#
 _global_container: Optional[FFDependencyInjectionManager] = None
 
 
 def ff_get_container() -> FFDependencyInjectionManager:
     """
-    Get global container instance.
+    Get the global dependency injection container instance (lazy singleton).
+    
+    This function implements the singleton pattern for application-wide access to
+    the DI container. On first access, it automatically creates and configures
+    a container with all standard services registered.
+    
+    Thread Safety: While the container operations are thread-safe, the initial
+    creation should ideally happen during single-threaded application startup.
+    
+    Usage Examples:
+        # Basic service resolution
+        storage = ff_get_container().resolve(StorageProtocol)
+        
+        # In tests - use after ff_set_container() with mocks
+        test_storage = ff_get_container().resolve(StorageProtocol)
     
     Returns:
-        Global container (creates if not exists)
+        FFDependencyInjectionManager: The global container instance
+        
+    Note:
+        The container is created with default configuration. For custom configuration,
+        create your own container and set it using ff_set_container().
     """
     global _global_container
     if _global_container is None:
@@ -468,10 +504,61 @@ def ff_get_container() -> FFDependencyInjectionManager:
 
 def ff_set_container(container: FFDependencyInjectionManager) -> None:
     """
-    Set global container instance.
+    Set a custom global container instance.
+    
+    This function allows you to replace the global container with a custom one,
+    which is particularly useful for:
+    - Unit testing with mocked services
+    - Different configurations for different environments  
+    - Runtime container reconfiguration
+    - Isolation between test cases
+    
+    Usage Examples:
+        # In tests - create container with mocked services
+        test_container = FFDependencyInjectionManager()
+        test_container.register_singleton(StorageProtocol, instance=mock_storage)
+        ff_set_container(test_container)
+        
+        # Reset to default in test cleanup
+        ff_set_container(ff_create_application_container())
+        
+        # Clear global state completely
+        ff_set_container(None)  # Next ff_get_container() creates fresh instance
     
     Args:
-        container: Container to set as global
+        container: The container instance to set as global, or None to clear
+        
+    Warning:
+        Setting a new container affects all subsequent service resolutions
+        across the entire application. Ensure proper coordination in
+        multi-threaded environments.
     """
     global _global_container
     _global_container = container
+
+
+def ff_clear_global_container() -> None:
+    """
+    Clear the global container instance, forcing recreation on next access.
+    
+    This is primarily useful for:
+    - Test isolation: Ensure each test starts with a fresh container
+    - Memory cleanup: Release all singleton instances
+    - Configuration reload: Force recreation with updated environment variables
+    
+    Usage Examples:
+        # In test teardown
+        def teardown():
+            ff_clear_global_container()
+            
+        # Force configuration reload
+        os.environ['CHATDB_ENV'] = 'production'
+        ff_clear_global_container()
+        container = ff_get_container()  # Creates new container with prod config
+    
+    Note:
+        After calling this function, the next call to ff_get_container() will
+        create a new container with current environment configuration.
+    """
+    global _global_container
+    _global_container = None

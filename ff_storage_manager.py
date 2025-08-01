@@ -621,6 +621,134 @@ class FFStorageManager:
         """
         return await self.search_engine.build_search_index(user_id)
     
+    # === Session Statistics ===
+    
+    async def get_session_stats(self, user_id: str, session_id: str) -> Dict[str, Any]:
+        """
+        Get comprehensive session statistics and analytics.
+        
+        Provides detailed information about a chat session including message counts,
+        document statistics, storage usage, vector information, and timestamps.
+        Useful for monitoring, debugging, analytics, and user experience features.
+        
+        Args:
+            user_id: User identifier
+            session_id: Session identifier
+            
+        Returns:
+            Dictionary containing session statistics:
+            - session_id: Session identifier
+            - user_id: User identifier  
+            - message_count: Total number of messages
+            - document_count: Number of uploaded documents
+            - total_size_bytes: Total storage size in bytes
+            - average_message_size: Average message size in bytes
+            - created_at: Session creation timestamp
+            - updated_at: Last update timestamp
+            - last_activity: Timestamp of most recent activity
+            - vector_count: Number of stored vectors (if available)
+            - storage_path: Relative path to session storage
+            - has_context: Whether situational context exists
+            - context_snapshots: Number of context history snapshots
+            
+        Raises:
+            ValueError: If session doesn't exist
+            
+        Usage Examples:
+            # Get basic session statistics
+            stats = await storage.get_session_stats("alice", "session_123")
+            print(f"Messages: {stats['message_count']}")
+            
+            # Monitor storage usage
+            if stats['total_size_bytes'] > 1_000_000:  # 1MB
+                print("Large session detected")
+            
+            # Check session activity
+            if stats['message_count'] == 0:
+                print("Empty session")
+        """
+        # Validate session exists
+        session = await self.get_session(user_id, session_id)
+        if not session:
+            raise ValueError(f"Session {session_id} not found for user {user_id}")
+        
+        # Initialize statistics
+        stats = {
+            'session_id': session_id,
+            'user_id': user_id,
+            'created_at': session.created_at,
+            'updated_at': session.updated_at,
+            'storage_path': f"users/{user_id}/chat_session_{session_id}",
+            'message_count': 0,
+            'document_count': 0,
+            'total_size_bytes': 0,
+            'average_message_size': 0.0,
+            'vector_count': 0,
+            'has_context': False,
+            'context_snapshots': 0,
+            'last_activity': session.updated_at or session.created_at
+        }
+        
+        try:
+            # Get message statistics
+            messages = await self.get_all_messages(user_id, session_id)
+            stats['message_count'] = len(messages)
+            
+            if messages:
+                # Calculate message size statistics
+                message_sizes = []
+                for msg in messages:
+                    msg_size = len(msg.content.encode('utf-8'))
+                    message_sizes.append(msg_size)
+                    # Update last activity from message timestamps
+                    if msg.timestamp > stats['last_activity']:
+                        stats['last_activity'] = msg.timestamp
+                
+                stats['total_size_bytes'] = sum(message_sizes)
+                stats['average_message_size'] = round(sum(message_sizes) / len(message_sizes), 2)
+            
+        except Exception as e:
+            print(f"Warning: Could not get message stats: {e}")
+        
+        try:
+            # Get document statistics
+            documents = await self.list_documents(user_id, session_id)
+            stats['document_count'] = len(documents)
+            
+            # Add document sizes to total
+            for doc in documents:
+                if hasattr(doc, 'size') and doc.size:
+                    stats['total_size_bytes'] += doc.size
+                    
+        except Exception as e:
+            print(f"Warning: Could not get document stats: {e}")
+        
+        try:
+            # Get vector storage statistics
+            vector_stats = await self.get_vector_stats(user_id, session_id)
+            if vector_stats:
+                stats['vector_count'] = vector_stats.get('total_vectors', 0)
+                # Add vector storage size if available
+                if 'storage_size_bytes' in vector_stats:
+                    stats['total_size_bytes'] += vector_stats['storage_size_bytes']
+                    
+        except Exception as e:
+            print(f"Warning: Could not get vector stats: {e}")
+        
+        try:
+            # Check for situational context
+            current_context = await self.get_context(user_id, session_id)
+            stats['has_context'] = current_context is not None
+            
+            # Get context history count
+            context_history = await self.get_context_history(user_id, session_id, limit=None)
+            stats['context_snapshots'] = len(context_history) if context_history else 0
+            
+        except Exception as e:
+            print(f"Warning: Could not get context stats: {e}")
+        
+        return stats
+    
     # === Helper Methods ===
     
     async def _write_json(self, key: str, data: Dict[str, Any]) -> bool:
