@@ -3,12 +3,14 @@ Correct imports and initialization for the new configuration system.
 
 Replace your current demo imports with these:
 """
+import sys
+sys.path.append('..')
 
 # CORRECT IMPORTS - Use these instead of legacy adapter
 from ff_storage_manager import FFStorageManager
 from ff_class_configs.ff_configuration_manager_config import load_config  # NEW CONFIG SYSTEM
 from ff_class_configs.ff_chat_entities_config import FFMessageDTO, FFSessionDTO, FFDocumentDTO, FFUserProfileDTO, MessageRole
-from ff_search_manager import FFSearchQueryDTO, FFSearchManager
+from ff_search_manager import FFSearchQuery, FFSearchManager
 
 # CORRECT INITIALIZATION - Use this instead of legacy config
 config = load_config()  # This loads the new configuration system

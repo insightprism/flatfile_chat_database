@@ -29,9 +29,9 @@ else:
     print(f"⚠️ PrismMind not found at: {prismmind_path} - will use legacy document processing")
 
 from ff_storage_manager import FFStorageManager
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import load_config
 from ff_class_configs.ff_chat_entities_config import FFMessageDTO, FFSession, FFDocument, FFUserProfile, MessageRole
-from ff_search_manager import FFSearchQuery, FFSearchManager
+from ff_search_manager import FFSearchQueryDTO, FFSearchManager
 from ff_vector_storage_manager import FFVectorStorageManager
 from ff_document_processing_manager import FFDocumentProcessingManager
 
@@ -83,10 +83,10 @@ class AutomatedDemo:
         self.demo_data_path.mkdir(parents=True)
         
         # Setup configuration
-        self.config = StorageConfig()
-        self.config.storage_base_path = str(self.demo_data_path)
-        self.config.enable_compression = False  # Easier to inspect
-        self.config.enable_file_locking = True
+        self.config = load_config()
+        self.config.storage.base_path = str(self.demo_data_path)
+        self.config.storage.enable_compression = False  # Easier to inspect
+        self.config.locking.enabled = True
         
         # Initialize components
         self.storage_manager = FFStorageManager(self.config)
@@ -95,7 +95,7 @@ class AutomatedDemo:
         self.doc_pipeline = FFDocumentProcessingManager(self.config)
         
         self.log(f"Demo data directory: {self.demo_data_path}")
-        self.log(f"Configuration: compression={self.config.enable_compression}, locking={self.config.enable_file_locking}")
+        self.log(f"Configuration: compression={self.config.storage.enable_compression}, locking={self.config.locking.enabled}")
         self.log("All components initialized successfully!", "SUCCESS")
         
     async def create_demo_users(self):
@@ -1108,7 +1108,7 @@ This guide provides a foundation for statistical analysis in data science. Remem
         for search_config in text_searches:
             self.log(f"  🔍 Searching for: '{search_config['query']}'")
             
-            search_query = FFSearchQuery(
+            search_query = FFSearchQueryDTO(
                 query=search_config["query"],
                 user_id="alice_researcher",  # Search as Alice
                 include_documents=True
@@ -1212,10 +1212,10 @@ This guide provides a foundation for statistical analysis in data science. Remem
         
         # Configuration info
         self.log(f"\n⚙️ Configuration:")
-        self.log(f"  Storage Path: {self.config.storage_base_path}")
-        self.log(f"  Compression: {self.config.enable_compression}")
-        self.log(f"  File Locking: {self.config.enable_file_locking}")
-        self.log(f"  Max Message Size: {self.config.max_message_size_bytes:,} bytes")
+        self.log(f"  Storage Path: {self.config.storage.base_path}")
+        self.log(f"  Compression: {self.config.storage.enable_compression}")
+        self.log(f"  File Locking: {self.config.locking.enabled}")
+        self.log(f"  Max Message Size: {self.config.storage.max_message_size_bytes:,} bytes")
         
         # Show file structure sample
         self.log(f"\n📁 File Structure Sample:")
@@ -1266,11 +1266,11 @@ This guide provides a foundation for statistical analysis in data science. Remem
         
         # Legacy configuration
         self.log("Legacy Configuration System:")
-        self.log(f"  Base Path: {self.config.storage_base_path}")
-        self.log(f"  Compression: {self.config.enable_compression}")
-        self.log(f"  File Locking: {self.config.enable_file_locking}")
-        self.log(f"  Max Message Size: {self.config.max_message_size_bytes:,} bytes")
-        self.log(f"  Vector Search Top K: {self.config.vector_search_top_k}")
+        self.log(f"  Base Path: {self.config.storage.base_path}")
+        self.log(f"  Compression: {self.config.storage.enable_compression}")
+        self.log(f"  File Locking: {self.config.locking.enabled}")
+        self.log(f"  Max Message Size: {self.config.storage.max_message_size_bytes:,} bytes")
+        self.log(f"  Vector Search Top K: {self.config.vector.search_top_k}")
         
         # Try new configuration system
         try:
@@ -1341,7 +1341,7 @@ This guide provides a foundation for statistical analysis in data science. Remem
         self.log("\nBenchmarking search performance...")
         start_time = time.time()
         
-        search_query = FFSearchQuery(
+        search_query = FFSearchQueryDTO(
             query="benchmark message",
             user_id="alice_researcher",
             session_ids=[benchmark_session_id]

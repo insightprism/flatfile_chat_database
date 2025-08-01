@@ -35,25 +35,33 @@ class SearchType(str, Enum):
     HYBRID = "hybrid"
 
 
-def generate_message_id(config: Optional['StorageConfig'] = None) -> str:
+def generate_message_id(config: Optional[Any] = None) -> str:
     """Generate unique message ID with configurable length"""
-    from ff_config_legacy_adapter import StorageConfig
     if config is None:
         # Use default length if no config provided (for backward compatibility)
         length = 12
     else:
-        length = config.message_id_length
+        # Try to get length from new config system first, then fall back to legacy
+        try:
+            length = getattr(config.storage, 'message_id_length', 12)
+        except AttributeError:
+            # Fallback for legacy config or no config
+            length = getattr(config, 'message_id_length', 12)
     return f"msg_{uuid.uuid4().hex[:length]}"
 
 
-def generate_insight_id(config: Optional['StorageConfig'] = None) -> str:
+def generate_insight_id(config: Optional[Any] = None) -> str:
     """Generate unique insight ID with configurable length"""
-    from ff_config_legacy_adapter import StorageConfig
     if config is None:
         # Use default length if no config provided (for backward compatibility)
         length = 12
     else:
-        length = config.insight_id_length
+        # Try to get length from new config system first, then fall back to legacy
+        try:
+            length = getattr(config.storage, 'insight_id_length', 12)
+        except AttributeError:
+            # Fallback for legacy config or no config
+            length = getattr(config, 'insight_id_length', 12)
     return f"insight_{uuid.uuid4().hex[:length]}"
 
 

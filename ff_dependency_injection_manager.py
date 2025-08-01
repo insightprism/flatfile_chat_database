@@ -373,13 +373,13 @@ def ff_create_application_container(config_path: Optional[Union[str, Path]] = No
     Returns:
         Configured service container
     """
-    from config_new.manager import load_config
-    from backends.flatfile import FlatfileBackend
+    from ff_class_configs.ff_configuration_manager_config import load_config
+    from backends import FlatfileBackend
     from ff_search_manager import FFSearchManager
     from ff_vector_storage_manager import FFVectorStorageManager
     from ff_document_processing_manager import FFDocumentProcessingManager
     from ff_storage_manager import FFStorageManager
-    from ff_utils.ff_file_ops import FFFileOperationManager
+    from ff_utils.ff_file_ops import FileOperationManager
     
     container = FFDependencyInjectionManager()
     
@@ -390,28 +390,28 @@ def ff_create_application_container(config_path: Optional[Union[str, Path]] = No
     # Register file operations
     def file_ops_factory(c: FFDependencyInjectionManager) -> FileOperationsProtocol:
         config = c.resolve(FFConfigurationManagerConfigDTO)
-        return FFFileOperationManager(config.storage)
+        return FileOperationManager(config)
     
     container.register_singleton(FileOperationsProtocol, factory=file_ops_factory)
     
     # Register backend
     def backend_factory(c: FFDependencyInjectionManager) -> BackendProtocol:
         config = c.resolve(FFConfigurationManagerConfigDTO)
-        return FlatfileBackend(config.storage)
+        return FlatfileBackend(config)
     
     container.register_singleton(BackendProtocol, factory=backend_factory)
     
     # Register vector store
     def vector_store_factory(c: FFDependencyInjectionManager) -> VectorStoreProtocol:
         config = c.resolve(FFConfigurationManagerConfigDTO)
-        return FFVectorStorageManager(config.vector)
+        return FFVectorStorageManager(config)
     
     container.register_singleton(VectorStoreProtocol, factory=vector_store_factory)
     
     # Register search engine
     def search_factory(c: FFDependencyInjectionManager) -> SearchProtocol:
         config = c.resolve(FFConfigurationManagerConfigDTO)
-        return FFSearchManager(config.search)
+        return FFSearchManager(config)
     
     container.register_singleton(SearchProtocol, factory=search_factory)
     
@@ -419,7 +419,7 @@ def ff_create_application_container(config_path: Optional[Union[str, Path]] = No
     def processor_factory(c: FFDependencyInjectionManager) -> DocumentProcessorProtocol:
         config = c.resolve(FFConfigurationManagerConfigDTO)
         vector_store = c.resolve(VectorStoreProtocol)
-        return FFDocumentProcessingManager(config.document, vector_store)
+        return FFDocumentProcessingManager(config)
     
     container.register_singleton(DocumentProcessorProtocol, factory=processor_factory)
     
@@ -433,7 +433,7 @@ def ff_create_application_container(config_path: Optional[Union[str, Path]] = No
         
         # Create storage manager with all dependencies
         manager = FFStorageManager(
-            config=config.storage,
+            config=config,
             backend=backend
         )
         

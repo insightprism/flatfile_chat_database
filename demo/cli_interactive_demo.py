@@ -26,9 +26,9 @@ else:
     print(f"⚠️ PrismMind not found at: {prismmind_path} - will use legacy document processing")
 
 from ff_storage_manager import FFStorageManager
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import load_config
 from ff_class_configs.ff_chat_entities_config import FFMessageDTO, FFSession, FFDocument, FFUserProfile, MessageRole
-from ff_search_manager import FFSearchQuery, FFSearchManager
+from ff_search_manager import FFSearchQueryDTO, FFSearchManager
 from ff_vector_storage_manager import FFVectorStorageManager
 from ff_document_processing_manager import FFDocumentProcessingManager
 
@@ -53,10 +53,10 @@ class InteractiveDemo:
         self.demo_data_path.mkdir(exist_ok=True)
         
         # Setup configuration
-        self.config = StorageConfig()
-        self.config.storage_base_path = str(self.demo_data_path)
-        self.config.enable_compression = False
-        self.config.enable_file_locking = True
+        self.config = load_config()
+        self.config.storage.base_path = str(self.demo_data_path)
+        self.config.storage.enable_compression = False
+        self.config.locking.enabled = True
         
         # Initialize components
         self.storage_manager = FFStorageManager(self.config)
@@ -369,9 +369,9 @@ class InteractiveDemo:
             
         try:
             message = FFMessageDTO(role=role, content=content)
-            await self.storage_manager.store_message(
-                self.current_session.session_id,
+            await self.storage_manager.add_message(
                 self.current_user,
+                self.current_session.session_id,
                 message
             )
             print("✅ Message added successfully!")
@@ -615,7 +615,7 @@ class InteractiveDemo:
             return
             
         try:
-            search_query = FFSearchQuery(
+            search_query = FFSearchQueryDTO(
                 query_text=query_text,
                 user_id=self.current_user,
                 session_id=self.current_session.session_id if self.current_session else None,
@@ -646,7 +646,7 @@ class InteractiveDemo:
             return
             
         try:
-            search_query = FFSearchQuery(
+            search_query = FFSearchQueryDTO(
                 query_text=query_text,
                 user_id=self.current_user,
                 session_id=self.current_session.session_id if self.current_session else None,
@@ -677,7 +677,7 @@ class InteractiveDemo:
             return
             
         try:
-            search_query = FFSearchQuery(
+            search_query = FFSearchQueryDTO(
                 query_text=query_text,
                 user_id=self.current_user,
                 session_id=self.current_session.session_id if self.current_session else None,
@@ -860,7 +860,7 @@ class InteractiveDemo:
             print("✅ Created test user")
             
             # Create test session
-            session = await self.storage_manager.create_session(
+            session_id = await self.storage_manager.create_session(
                 user_id="test_user",
                 title="Quick Test Session"
             )
@@ -871,28 +871,29 @@ class InteractiveDemo:
                 role=MessageRole.USER,
                 content="This is a test message for the quick test."
             )
-            await self.storage_manager.store_message(session.session_id, "test_user", message)
+            await self.storage_manager.add_message("test_user", session_id, message)
             print("✅ Added test message")
             
             # Add test document
-            document = FFDocument(
+            doc_content = "This is a test document containing important information about testing."
+            doc_id = await self.storage_manager.save_document(
+                user_id="test_user",
+                session_id=session_id,
                 filename="test_doc.txt",
-                content="This is a test document containing important information about testing.",
+                content=doc_content.encode('utf-8'),
                 metadata={"type": "test"}
             )
-            doc_id = await self.storage_manager.store_document(session.session_id, "test_user", document)
             print("✅ Added test document")
             
             # Test search
-            search_query = FFSearchQuery(
-                query_text="test",
+            search_query = FFSearchQueryDTO(
+                query="test",
                 user_id="test_user",
-                session_id=session.session_id,
-                include_messages=True,
+                session_ids=[session_id],
                 include_documents=True
             )
             results = await self.search_engine.search(search_query)
-            print(f"✅ Search test: Found {len(results.results)} results")
+            print(f"✅ Search test: Found {len(results)} results")
             
             print("\n🎉 Quick test completed successfully!")
             
