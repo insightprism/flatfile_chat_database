@@ -130,9 +130,10 @@ class FFDependencyInjectionManager:
             lifetime: Service lifetime
         """
         # Auto-detect dependencies if implementation provided
+
         dependencies = []
         if implementation and not factory and not instance:
-            dependencies = self._get_constructor_dependencies(implementation)
+            dependencies = self._get_constructor_dependencies( )
         
         descriptor = FFServiceDescriptor(
             interface=interface,
