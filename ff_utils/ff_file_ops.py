@@ -43,18 +43,18 @@ else:
 class FFFileLock:
     """Cross-platform file lock implementation"""
     
-    def __init__(self, path: Path, timeout: float = 30.0, config: Optional[FFConfigurationManagerConfigDTO] = None):
+    def __init__(self, path: Path, timeout: Optional[float] = None, config: Optional[FFConfigurationManagerConfigDTO] = None):
         """
         Initialize file lock.
         
         Args:
             path: Path to lock (will use .lock suffix)
-            timeout: Maximum time to wait for lock in seconds
+            timeout: Maximum time to wait for lock in seconds (uses config default if None)
             config: Storage configuration for retry parameters
         """
         self.path = path
         self.lock_path = path.with_suffix(path.suffix + '.lock')
-        self.timeout = timeout
+        self.timeout = timeout or (config.runtime.default_lock_timeout_seconds if config else 30.0)
         self.config = config
         self.lock_file = None
         self.is_windows = platform.system() == 'Windows'
@@ -80,6 +80,7 @@ class FFFileLock:
             retry_delay = self.config.locking.retry_initial_delay_ms / 1000.0  # Convert ms to seconds
             max_delay = self.config.locking.retry_max_delay_seconds
         else:
+            # Use runtime config defaults if available
             retry_delay = 0.01  # 10ms default
             max_delay = 1.0  # 1 second default
         
@@ -259,7 +260,9 @@ class FileOperationManager:
             
             return await asyncio.get_event_loop().run_in_executor(None, read_data)
         except Exception as e:
-            print(f"Error reading {path}: {e}")
+            from ff_utils.ff_logging import get_logger
+            logger = get_logger(__name__)
+            logger.error(f"Error reading {path}: {e}", exc_info=True)
             return None
     
     async def _write_internal(self, path: Path, data: Union[str, bytes], write_mode: str = 'wb') -> bool:
@@ -341,7 +344,9 @@ class FileOperationManager:
             return True
             
         except Exception as e:
-            print(f"Failed to append to {path}: {e}")
+            from ff_utils.ff_logging import get_logger
+            logger = get_logger(__name__)
+            logger.error(f"Failed to append to {path}: {e}", exc_info=True)
             return False
     
     async def _delete_internal(self, path: Path) -> bool:
@@ -356,7 +361,9 @@ class FileOperationManager:
                 shutil.rmtree(path)
             return True
         except Exception as e:
-            print(f"Failed to delete {path}: {e}")
+            from ff_utils.ff_logging import get_logger
+            logger = get_logger(__name__)
+            logger.error(f"Failed to delete {path}: {e}", exc_info=True)
             return False
 
 
@@ -441,7 +448,9 @@ async def ff_safe_read(
             
             return await asyncio.get_event_loop().run_in_executor(None, read_data)
         except Exception as e:
-            print(f"Error reading {path}: {e}")
+            from ff_utils.ff_logging import get_logger
+            logger = get_logger(__name__)
+            logger.error(f"Error reading {path}: {e}", exc_info=True)
             return None
     
     # Use file operation manager with shared lock for reads
@@ -463,7 +472,9 @@ async def ff_ensure_directory(path: Path) -> bool:
         path.mkdir(parents=True, exist_ok=True)
         return True
     except Exception as e:
-        print(f"Failed to create directory {path}: {e}")
+        from ff_utils.ff_logging import get_logger
+        logger = get_logger(__name__)
+        logger.error(f"Failed to create directory {path}: {e}", exc_info=True)
         return False
 
 
@@ -506,7 +517,9 @@ async def ff_safe_delete(
         return True
         
     except Exception as e:
-        print(f"Failed to delete {path}: {e}")
+        from ff_utils.ff_logging import get_logger
+        logger = get_logger(__name__)
+        logger.error(f"Failed to delete {path}: {e}", exc_info=True)
         return False
 
 
@@ -560,7 +573,9 @@ async def ff_copy_file(
         return await ff_atomic_write(destination, data, config, mode='wb')
         
     except Exception as e:
-        print(f"Failed to copy {source} to {destination}: {e}")
+        from ff_utils.ff_logging import get_logger
+        logger = get_logger(__name__)
+        logger.error(f"Failed to copy {source} to {destination}: {e}", exc_info=True)
         return False
 
 

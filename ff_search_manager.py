@@ -56,7 +56,7 @@ class FFSearchResultDTO:
     highlights: List[Tuple[int, int]] = field(default_factory=list)  # (start, end) positions
     metadata: Dict[str, Any] = field(default_factory=dict)
     
-    def __lt__(self, other):
+    def __lt__(self, other: 'FFSearchResultDTO') -> bool:
         """Sort by relevance score descending"""
         return self.relevance_score > other.relevance_score
 

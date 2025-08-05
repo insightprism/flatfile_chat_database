@@ -26,6 +26,7 @@ from ff_utils import (
     ff_get_user_key, ff_get_session_key, ff_get_profile_key, ff_get_messages_key,
     ff_get_session_metadata_key
 )
+from ff_utils.ff_logging import get_logger
 from ff_search_manager import FFSearchManager, FFSearchQueryDTO, FFSearchResultDTO
 from ff_vector_storage_manager import FFVectorStorageManager
 from ff_chunking_manager import FFChunkingManager
@@ -69,6 +70,7 @@ class FFStorageManager:
         self.backend = backend or FlatfileBackend(self.config)
         self.base_path = Path(self.config.storage.base_path)
         self._initialized = False
+        self.logger = get_logger(__name__)
         
         # Lazy-loaded components
         self._search_engine = None
@@ -83,7 +85,7 @@ class FFStorageManager:
         self._enable_prismmind = enable_prismmind
     
     @property
-    def search_engine(self):
+    def search_engine(self) -> FFSearchManager:
         """Lazy-load search engine."""
         if self._search_engine is None:
             from ff_dependency_injection_manager import ff_get_container
@@ -96,7 +98,7 @@ class FFStorageManager:
         return self._search_engine
     
     @property
-    def vector_storage(self):
+    def vector_storage(self) -> FFVectorStorageManager:
         """Lazy-load vector storage."""
         if self._vector_storage is None:
             from ff_dependency_injection_manager import ff_get_container
@@ -109,21 +111,21 @@ class FFStorageManager:
         return self._vector_storage
     
     @property
-    def chunking_engine(self):
+    def chunking_engine(self) -> FFChunkingManager:
         """Lazy-load chunking engine."""
         if self._chunking_engine is None:
             self._chunking_engine = FFChunkingManager(self.config)
         return self._chunking_engine
     
     @property
-    def embedding_engine(self):
+    def embedding_engine(self) -> FFEmbeddingManager:
         """Lazy-load embedding engine."""
         if self._embedding_engine is None:
             self._embedding_engine = FFEmbeddingManager(self.config)
         return self._embedding_engine
     
     @property
-    def document_processor(self):
+    def document_processor(self) -> 'FFDocumentProcessingManager':
         """Lazy-load document processor."""
         if self._document_processor is None:
             from ff_dependency_injection_manager import ff_get_container
@@ -137,7 +139,7 @@ class FFStorageManager:
         return self._document_processor
     
     @property
-    def prismmind_processor(self):
+    def prismmind_processor(self) -> Optional[Any]:
         """Lazy-load PrismMind processor."""
         if self._prismmind_processor is None and self._prismmind_available:
             try:
@@ -152,7 +154,7 @@ class FFStorageManager:
         return self._prismmind_processor
     
     @property
-    def prismmind_available(self):
+    def prismmind_available(self) -> bool:
         """Check if PrismMind is available."""
         return self._prismmind_available
     
@@ -192,7 +194,7 @@ class FFStorageManager:
         # Check if user already exists
         user_key = ff_get_user_key(self.base_path, user_id, self.config)
         if await self.backend.exists(user_key):
-            print(f"User {user_id} already exists")
+            self.logger.info(f"User {user_id} already exists")
             return False
         
         # Create user profile
@@ -506,7 +508,7 @@ class FFStorageManager:
         message_size = len(str(message_json).encode('utf-8'))
         
         if message_size > self.config.storage.max_message_size_bytes:
-            print(f"Message size {message_size} exceeds limit {self.config.storage.max_message_size_bytes}")
+            self.logger.warning(f"Message size {message_size} exceeds limit {self.config.storage.max_message_size_bytes}")
             return False
         
         # Get messages file path
@@ -555,7 +557,7 @@ class FFStorageManager:
             try:
                 messages.append(FFMessageDTO.from_dict(data))
             except Exception as e:
-                print(f"Failed to parse message: {e}")
+                self.logger.error(f"Failed to parse message: {e}", exc_info=True)
                 continue
         
         return messages
@@ -611,7 +613,8 @@ class FFStorageManager:
                     matching_messages.append(msg)
         
         # Limit results
-        return matching_messages[:self.config.search.default_limit]
+        limit = self.config.runtime.default_search_limit
+        return matching_messages[:limit]
     
     # === Advanced Search Methods ===
     
@@ -629,24 +632,25 @@ class FFStorageManager:
     
     async def search_by_entities(self, entities: Dict[str, List[str]], 
                                 user_id: Optional[str] = None,
-                                limit: int = 100) -> List[FFSearchResultDTO]:
+                                limit: Optional[int] = None) -> List[FFSearchResultDTO]:
         """
         Search for content containing specific entities.
         
         Args:
             entities: Entity types and values (e.g., {"languages": ["Python"], "urls": ["github.com"]})
             user_id: Optional user scope
-            limit: Maximum results
+            limit: Maximum results (uses config default if None)
             
         Returns:
             List of search results
         """
+        limit = limit or self.config.runtime.default_search_limit
         return await self.search_engine.search_by_entities(entities, user_id, limit)
     
     async def search_by_time_range(self, start_date: datetime, end_date: datetime,
                                   user_id: Optional[str] = None,
                                   query_text: Optional[str] = None,
-                                  limit: int = 100) -> List[FFSearchResultDTO]:
+                                  limit: Optional[int] = None) -> List[FFSearchResultDTO]:
         """
         Search within a specific time range.
         
@@ -655,11 +659,12 @@ class FFStorageManager:
             end_date: End of time range  
             user_id: Optional user scope
             query_text: Optional text to search for
-            limit: Maximum results
+            limit: Maximum results (uses config default if None)
             
         Returns:
             List of search results
         """
+        limit = limit or self.config.runtime.default_search_limit
         return await self.search_engine.search_by_time_range(
             start_date, end_date, user_id, query_text, limit
         )
@@ -727,12 +732,20 @@ class FFStorageManager:
             print(f"Messages: {stats['message_count']}")
             
             # Monitor storage usage
-            if stats['total_size_bytes'] > 1_000_000:  # 1MB
-                print("Large session detected")
+            if (stats['total_size_bytes'] > self.config.runtime.large_session_threshold_bytes and 
+                self.config.runtime.enable_large_session_warnings):
+                self.logger.info("Large session detected", extra={
+                    'session_size_bytes': stats['total_size_bytes'],
+                    'threshold_bytes': self.config.runtime.large_session_threshold_bytes
+                })
             
             # Check session activity
-            if stats['message_count'] == 0:
-                print("Empty session")
+            if (stats['message_count'] == 0 and 
+                self.config.runtime.enable_empty_session_notifications):
+                self.logger.info("Empty session detected", extra={
+                    'session_id': session_id,
+                    'user_id': user_id
+                })
         """
         # Validate session exists
         session = await self.get_session(user_id, session_id)
@@ -775,7 +788,7 @@ class FFStorageManager:
                 stats['average_message_size'] = round(sum(message_sizes) / len(message_sizes), 2)
             
         except Exception as e:
-            print(f"Warning: Could not get message stats: {e}")
+            self.logger.warning(f"Could not get message stats: {e}", exc_info=True)
         
         try:
             # Get document statistics
@@ -788,7 +801,7 @@ class FFStorageManager:
                     stats['total_size_bytes'] += doc.size
                     
         except Exception as e:
-            print(f"Warning: Could not get document stats: {e}")
+            self.logger.warning(f"Could not get document stats: {e}", exc_info=True)
         
         try:
             # Get vector storage statistics
@@ -800,7 +813,7 @@ class FFStorageManager:
                     stats['total_size_bytes'] += vector_stats['storage_size_bytes']
                     
         except Exception as e:
-            print(f"Warning: Could not get vector stats: {e}")
+            self.logger.warning(f"Could not get vector stats: {e}", exc_info=True)
         
         try:
             # Check for situational context
@@ -812,7 +825,7 @@ class FFStorageManager:
             stats['context_snapshots'] = len(context_history) if context_history else 0
             
         except Exception as e:
-            print(f"Warning: Could not get context stats: {e}")
+            self.logger.warning(f"Could not get context stats: {e}", exc_info=True)
         
         return stats
     
@@ -852,13 +865,13 @@ class FFStorageManager:
         """
         # Check document size
         if len(content) > self.config.storage.max_document_size_bytes:
-            print(f"Document size {len(content)} exceeds limit {self.config.storage.max_document_size_bytes}")
+            self.logger.warning(f"Document size {len(content)} exceeds limit {self.config.storage.max_document_size_bytes}")
             return ""
         
         # Check file extension
         ext = Path(filename).suffix.lower()
         if ext not in self.config.document.allowed_extensions:
-            print(f"File extension {ext} not allowed")
+            self.logger.warning(f"File extension {ext} not allowed")
             return ""
         
         # Generate safe filename
@@ -946,7 +959,7 @@ class FFStorageManager:
             try:
                 documents.append(FFDocumentDTO.from_dict(doc_data))
             except Exception as e:
-                print(f"Failed to parse document metadata: {e}")
+                self.logger.error(f"Failed to parse document metadata: {e}", exc_info=True)
                 continue
         
         return documents
@@ -1059,7 +1072,7 @@ class FFStorageManager:
             return success
             
         except Exception as e:
-            print(f"Error generating vectors: {e}")
+            self.logger.error(f"Error generating vectors: {e}", exc_info=True)
             return False
     
     async def vector_search(
@@ -1067,8 +1080,8 @@ class FFStorageManager:
         user_id: str,
         query: str,
         session_ids: Optional[List[str]] = None,
-        top_k: int = 5,
-        threshold: float = 0.7,
+        top_k: Optional[int] = None,
+        threshold: Optional[float] = None,
         embedding_provider: str = None,
         api_key: Optional[str] = None
     ) -> List[FFSearchResultDTO]:
@@ -1079,14 +1092,17 @@ class FFStorageManager:
             user_id: User identifier
             query: Search query text
             session_ids: Optional list of sessions to search (None = all)
-            top_k: Number of results to return
-            threshold: Minimum similarity threshold
+            top_k: Number of results to return (uses config default if None)
+            threshold: Minimum similarity threshold (uses config default if None)
             embedding_provider: Provider for query embedding (default: "nomic-ai")
             api_key: API key if required
             
         Returns:
             List of search results sorted by relevance
         """
+        # Use config defaults if not provided
+        top_k = top_k or self.config.runtime.vector_search_top_k
+        threshold = threshold or self.config.runtime.similarity_threshold
         # Generate query embedding
         embedding_results = await self.embedding_engine.generate_embeddings(
             [query],
@@ -1133,7 +1149,7 @@ class FFStorageManager:
                     all_results.append(search_result)
                     
             except Exception as e:
-                print(f"Error searching session {session_id}: {e}")
+                self.logger.warning(f"Error searching session {session_id}: {e}", exc_info=True)
                 continue
         
         # Sort by relevance and return top results
@@ -1145,8 +1161,8 @@ class FFStorageManager:
         user_id: str,
         query: str,
         session_ids: Optional[List[str]] = None,
-        top_k: int = 10,
-        vector_weight: float = 0.5,
+        top_k: Optional[int] = None,
+        vector_weight: Optional[float] = None,
         **kwargs
     ) -> List[FFSearchResultDTO]:
         """
@@ -1156,13 +1172,16 @@ class FFStorageManager:
             user_id: User identifier
             query: Search query
             session_ids: Sessions to search
-            top_k: Number of results
-            vector_weight: Weight for vector search (0-1)
+            top_k: Number of results (uses config default if None)
+            vector_weight: Weight for vector search (0-1, uses config default if None)
             **kwargs: Additional arguments for searches
             
         Returns:
             Combined and re-ranked results
         """
+        # Use config defaults if not provided
+        top_k = top_k or self.config.runtime.vector_search_top_k
+        vector_weight = vector_weight or self.config.runtime.hybrid_search_vector_weight
         # Perform text search
         search_query = FFSearchQueryDTO(
             query=query,
@@ -1353,7 +1372,7 @@ class FFStorageManager:
                 try:
                     contexts.append(FFSituationalContextDTO.from_dict(context_data))
                 except Exception as e:
-                    print(f"Failed to parse context snapshot: {e}")
+                    self.logger.error(f"Failed to parse context snapshot: {e}", exc_info=True)
                     continue
         
         return contexts
@@ -1375,7 +1394,7 @@ class FFStorageManager:
         """
         # Validate personas count
         if len(personas) > self.config.panel.max_personas_per_panel:
-            print(f"Too many personas: {len(personas)} > {self.config.panel.max_personas_per_panel}")
+            self.logger.warning(f"Too many personas: {len(personas)} > {self.config.panel.max_personas_per_panel}")
             return ""
         
         # Generate panel ID
@@ -1452,7 +1471,7 @@ class FFStorageManager:
             try:
                 messages.append(FFPanelMessageDTO.from_dict(data))
             except Exception as e:
-                print(f"Failed to parse panel message: {e}")
+                self.logger.error(f"Failed to parse panel message: {e}", exc_info=True)
                 continue
         
         return messages

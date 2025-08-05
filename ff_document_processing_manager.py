@@ -69,7 +69,9 @@ class FFDocumentProcessingManager:
                 prismmind_config = FFPrismMindConfig(flatfile_config=self.config)
                 self.prismmind_processor = FFDocumentProcessor(prismmind_config)
             except Exception as e:
-                print(f"Failed to initialize PrismMind integration: {e}")
+                from ff_utils.ff_logging import get_logger
+                logger = get_logger(__name__)
+                logger.error(f"Failed to initialize PrismMind integration: {e}", exc_info=True)
                 self.use_prismmind = False
         
         if not self.use_prismmind:

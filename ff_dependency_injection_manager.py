@@ -6,7 +6,7 @@ singletons, factories, and scoped instances.
 """
 
 import asyncio
-from typing import Dict, Type, Any, Callable, Optional, TypeVar, Union, List
+from typing import Dict, Type, Any, Callable, Optional, TypeVar, Union, List, AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 import inspect
@@ -144,6 +144,9 @@ class FFDependencyInjectionManager:
             dependencies=dependencies
         )
         
+        # Validate registration
+        self._validate_service_registration(interface, implementation, factory, instance)
+        
         self._descriptors[interface] = descriptor
         
         # Store singleton instances immediately
@@ -242,7 +245,7 @@ class FFDependencyInjectionManager:
             return self.resolve(interface, scope)
     
     @asynccontextmanager
-    async def create_scope(self):
+    async def create_scope(self) -> AsyncGenerator['FFServiceScope', None]:
         """
         Create a new service scope.
         
@@ -280,7 +283,7 @@ class FFDependencyInjectionManager:
     def _create_instance(self, descriptor: FFServiceDescriptor, 
                         scope: Optional[FFServiceScope] = None) -> Any:
         """
-        Create service instance.
+        Create service instance with enhanced error handling.
         
         Args:
             descriptor: Service descriptor
@@ -288,26 +291,47 @@ class FFDependencyInjectionManager:
             
         Returns:
             Service instance
-        """
-        # If instance provided, return it
-        if descriptor.instance:
-            return descriptor.instance
-        
-        # If factory provided, use it
-        if descriptor.factory:
-            return descriptor.factory(self)
-        
-        # Otherwise, instantiate implementation with dependencies
-        if descriptor.implementation:
-            # Resolve dependencies
-            resolved_deps = {}
-            for dep_type in descriptor.dependencies:
-                resolved_deps[dep_type.__name__.lower()] = self.resolve(dep_type, scope)
             
-            # Create instance
-            return descriptor.implementation(**resolved_deps)
+        Raises:
+            ValueError: If service creation fails
+        """
+        interface_name = getattr(descriptor.interface, '__name__', str(descriptor.interface))
         
-        raise ValueError("No way to create instance")
+        try:
+            # If instance provided, return it
+            if descriptor.instance:
+                return descriptor.instance
+            
+            # If factory provided, use it
+            if descriptor.factory:
+                return descriptor.factory(self)
+            
+            # Otherwise, instantiate implementation with dependencies
+            if descriptor.implementation:
+                # Resolve dependencies with better error reporting
+                resolved_deps = {}
+                for dep_type in descriptor.dependencies:
+                    try:
+                        resolved_deps[dep_type.__name__.lower()] = self.resolve(dep_type, scope)
+                    except Exception as e:
+                        raise ValueError(
+                            f"Failed to resolve dependency {dep_type.__name__} for {interface_name}"
+                        ) from e
+                
+                # Create instance
+                return descriptor.implementation(**resolved_deps)
+            
+            raise ValueError(f"No way to create instance for {interface_name}")
+        
+        except Exception as e:
+            if isinstance(e, ValueError) and "Failed to resolve dependency" in str(e):
+                # Re-raise dependency resolution errors as-is
+                raise
+            
+            # Wrap other errors with context
+            raise ValueError(
+                f"Failed to create instance for {interface_name}: {str(e)}"
+            ) from e
     
     def _get_constructor_dependencies(self, implementation: Type) -> List[Type]:
         """
@@ -335,6 +359,87 @@ class FFDependencyInjectionManager:
         
         return dependencies
     
+    def _validate_service_registration(self, interface: Type, implementation: Optional[Type] = None,
+                                     factory: Optional[Callable] = None, 
+                                     instance: Optional[Any] = None) -> None:
+        """
+        Validate service registration parameters.
+        
+        Args:
+            interface: Service interface
+            implementation: Implementation class
+            factory: Factory function
+            instance: Instance object
+            
+        Raises:
+            ValueError: If registration is invalid
+        """
+        interface_name = getattr(interface, '__name__', str(interface))
+        
+        # Check if interface is already registered
+        if interface in self._descriptors:
+            # Allow re-registration for testing scenarios
+            pass
+        
+        # Validate implementation inheritance if provided
+        if implementation and hasattr(interface, '__mro__'):
+            # For protocol/ABC interfaces, check if implementation has required methods
+            if hasattr(interface, '__abstractmethods__'):
+                abstract_methods = getattr(interface, '__abstractmethods__', set())
+                impl_methods = set(dir(implementation))
+                missing_methods = abstract_methods - impl_methods
+                if missing_methods:
+                    raise ValueError(
+                        f"Implementation {implementation.__name__} missing required methods "
+                        f"for {interface_name}: {missing_methods}"
+                    )
+        
+        # Validate factory signature if provided
+        if factory:
+            try:
+                sig = inspect.signature(factory)
+                params = list(sig.parameters.keys())
+                if not params or params[0] not in ['container', 'c', 'self']:
+                    raise ValueError(
+                        f"Factory for {interface_name} should accept container as first parameter"
+                    )
+            except Exception as e:
+                raise ValueError(f"Invalid factory for {interface_name}: {e}")
+        
+        # Validate instance type if provided
+        if instance and hasattr(interface, '__mro__'):
+            if not isinstance(instance, interface):
+                # For protocols, we can't use isinstance, so just warn
+                pass
+    
+    def is_registered(self, interface: Type) -> bool:
+        """Check if interface is registered."""
+        return interface in self._descriptors
+    
+    def get_registration_info(self, interface: Type) -> Dict[str, Any]:
+        """
+        Get registration information for debugging.
+        
+        Args:
+            interface: Service interface
+            
+        Returns:
+            Dictionary with registration details
+        """
+        if interface not in self._descriptors:
+            return {"registered": False}
+        
+        descriptor = self._descriptors[interface]
+        return {
+            "registered": True,
+            "lifetime": descriptor.lifetime,
+            "has_implementation": descriptor.implementation is not None,
+            "has_factory": descriptor.factory is not None,
+            "has_instance": descriptor.instance is not None,
+            "dependency_count": len(descriptor.dependencies),
+            "is_singleton_created": interface in self._singletons
+        }
+    
     def get_all_registered(self) -> List[Type]:
         """
         Get all registered service interfaces.
@@ -343,18 +448,6 @@ class FFDependencyInjectionManager:
             List of registered interfaces
         """
         return list(self._descriptors.keys())
-    
-    def is_registered(self, interface: Type) -> bool:
-        """
-        Check if service is registered.
-        
-        Args:
-            interface: Service interface
-            
-        Returns:
-            True if registered
-        """
-        return interface in self._descriptors
     
     def clear(self) -> None:
         """Clear all registrations and instances."""
@@ -390,16 +483,16 @@ def ff_create_application_container(config_path: Optional[Union[str, Path]] = No
     config_manager = load_config(config_path, environment)
     container.register_singleton(FFConfigurationManagerConfigDTO, instance=config_manager)
     
-    # Register file operations
-    def file_ops_factory(c: FFDependencyInjectionManager) -> FileOperationsProtocol:
-        config = c.resolve(FFConfigurationManagerConfigDTO)
+    # Register file operations  
+    def file_ops_factory(container: FFDependencyInjectionManager) -> FileOperationsProtocol:
+        config = container.resolve(FFConfigurationManagerConfigDTO)
         return FileOperationManager(config)
     
     container.register_singleton(FileOperationsProtocol, factory=file_ops_factory)
     
     # Register backend
-    def backend_factory(c: FFDependencyInjectionManager) -> BackendProtocol:
-        config = c.resolve(FFConfigurationManagerConfigDTO)
+    def backend_factory(container: FFDependencyInjectionManager) -> BackendProtocol:
+        config = container.resolve(FFConfigurationManagerConfigDTO)
         return FlatfileBackend(config)
     
     container.register_singleton(BackendProtocol, factory=backend_factory)
@@ -412,45 +505,43 @@ def ff_create_application_container(config_path: Optional[Union[str, Path]] = No
     container.register_singleton(VectorStoreProtocol, factory=vector_store_factory)
     
     # Register search engine
-    def search_factory(c: FFDependencyInjectionManager) -> SearchProtocol:
-        config = c.resolve(FFConfigurationManagerConfigDTO)
+    def search_factory(container: FFDependencyInjectionManager) -> SearchProtocol:
+        config = container.resolve(FFConfigurationManagerConfigDTO)
         return FFSearchManager(config)
     
     container.register_singleton(SearchProtocol, factory=search_factory)
     
     # Register document processor
-    def processor_factory(c: FFDependencyInjectionManager) -> DocumentProcessorProtocol:
-        config = c.resolve(FFConfigurationManagerConfigDTO)
-        vector_store = c.resolve(VectorStoreProtocol)
+    def processor_factory(container: FFDependencyInjectionManager) -> DocumentProcessorProtocol:
+        config = container.resolve(FFConfigurationManagerConfigDTO)
+        # Note: vector_store dependency commented out as FFDocumentProcessingManager
+        # doesn't currently use it in constructor
         return FFDocumentProcessingManager(config)
     
     container.register_singleton(DocumentProcessorProtocol, factory=processor_factory)
     
     # Register storage manager
-    def storage_factory(c: FFDependencyInjectionManager) -> StorageProtocol:
-        config = c.resolve(FFConfigurationManagerConfigDTO)
-        backend = c.resolve(BackendProtocol)
-        search = c.resolve(SearchProtocol)
-        vector_store = c.resolve(VectorStoreProtocol)
-        processor = c.resolve(DocumentProcessorProtocol)
+    def storage_factory(container: FFDependencyInjectionManager) -> StorageProtocol:
+        config = container.resolve(FFConfigurationManagerConfigDTO)
+        backend = container.resolve(BackendProtocol)
         
-        # Create storage manager with all dependencies
+        # Create storage manager with essential dependencies
+        # Other services will be lazily loaded via DI container
         manager = FFStorageManager(
             config=config,
             backend=backend
         )
         
-        # No need to inject services - they will be lazily loaded via DI container
-        
         return manager
     
     container.register_singleton(StorageProtocol, factory=storage_factory)
     
-    # Register embedding function
-    def embedding_factory(c: FFDependencyInjectionManager):
-        config = c.resolve(FFConfigurationManagerConfigDTO)
+    # Register embedding function as a service
+    def embedding_factory(container: FFDependencyInjectionManager):
+        config = container.resolve(FFConfigurationManagerConfigDTO)
         return partial(generate_embeddings, config=config)
     
+    # Register embedding service (simplified for now)
     container.register_singleton("generate_embeddings", factory=embedding_factory)
     
     return container

@@ -38,7 +38,7 @@ class FFMigrationStatsDTO:
         if self.start_time is None:
             self.start_time = datetime.now()
     
-    def add_error(self, error_type: str, details: str, item_id: str = ""):
+    def add_error(self, error_type: str, details: str, item_id: str = "") -> None:
         """Add an error to the stats"""
         self.errors.append({
             "type": error_type,
@@ -47,7 +47,7 @@ class FFMigrationStatsDTO:
             "timestamp": datetime.now().isoformat()
         })
     
-    def finalize(self):
+    def finalize(self) -> None:
         """Mark migration as complete"""
         self.end_time = datetime.now()
     
@@ -83,7 +83,7 @@ class FFDatabaseAdapterManager(ABC):
         pass
     
     @abstractmethod
-    async def close(self):
+    async def close(self) -> None:
         """Close database connection"""
         pass
     
@@ -140,12 +140,12 @@ class FFSQLiteAdapter(FFDatabaseAdapterManager):
             print(f"Failed to initialize SQLite: {e}")
             return False
     
-    async def close(self):
+    async def close(self) -> None:
         """Close database connection"""
         if self.conn:
             self.conn.close()
     
-    async def _create_schema(self):
+    async def _create_schema(self) -> None:
         """Create database schema"""
         schema = """
         -- Users table

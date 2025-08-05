@@ -7,7 +7,7 @@ to handle large sessions without loading everything into memory.
 
 import asyncio
 from pathlib import Path
-from typing import AsyncIterator, Dict, List, Optional, Any, Tuple
+from typing import AsyncIterator, Dict, List, Optional, Any, Tuple, Union
 import json
 from dataclasses import dataclass
 
@@ -32,7 +32,7 @@ class FFMessageStreamerManager:
     Useful for large sessions with thousands of messages.
     """
     
-    def __init__(self, config: Union[StorageConfig, FFConfigurationManagerConfigDTO], stream_config: Optional[FFStreamConfigDTO] = None):
+    def __init__(self, config: FFConfigurationManagerConfigDTO, stream_config: Optional[FFStreamConfigDTO] = None):
         """
         Initialize message streamer manager.
         
@@ -103,7 +103,9 @@ class FFMessageStreamerManager:
                 try:
                     messages.append(FFMessageDTO.from_dict(entry))
                 except Exception as e:
-                    print(f"Error parsing message: {e}")
+                    from ff_utils.ff_logging import get_logger
+                    logger = get_logger(__name__)
+                    logger.error(f"Error parsing message: {e}", exc_info=True)
                     continue
             
             if messages:
@@ -192,14 +194,14 @@ class FFMessageStreamerManager:
             Tuples of (session_id, message_chunk)
         """
         # Create streaming tasks for each session
-        async def stream_session(session_id: str):
+        async def stream_session(session_id: str) -> AsyncIterator[List[FFMessageDTO]]:
             async for chunk in self.stream_messages(user_id, session_id):
                 yield (session_id, chunk)
         
         # Limit concurrent streams
         semaphore = asyncio.Semaphore(self.stream_config.max_concurrent_streams)
         
-        async def bounded_stream(session_id: str):
+        async def bounded_stream(session_id: str) -> AsyncIterator[Tuple[str, List[FFMessageDTO]]]:
             async with semaphore:
                 async for item in stream_session(session_id):
                     yield item
@@ -208,7 +210,7 @@ class FFMessageStreamerManager:
         streams = [bounded_stream(sid) for sid in session_ids]
         
         # Use asyncio to merge the streams
-        async def merge_streams():
+        async def merge_streams() -> AsyncIterator[Tuple[str, List[FFMessageDTO]]]:
             tasks = []
             for stream in streams:
                 task = asyncio.create_task(self._consume_stream(stream))
@@ -241,7 +243,7 @@ class FFMessageStreamerManager:
             pass
         return count
     
-    async def _consume_stream(self, stream):
+    async def _consume_stream(self, stream: AsyncIterator[Tuple[str, List[FFMessageDTO]]]) -> List[Tuple[str, List[FFMessageDTO]]]:
         """Consume a single stream"""
         async for item in stream:
             return item
@@ -255,7 +257,7 @@ class FFExportStreamerManager:
     Handles efficient export of large datasets without memory issues.
     """
     
-    def __init__(self, config: Union[StorageConfig, FFConfigurationManagerConfigDTO], stream_config: Optional[FFStreamConfigDTO] = None):
+    def __init__(self, config: FFConfigurationManagerConfigDTO, stream_config: Optional[FFStreamConfigDTO] = None):
         """
         Initialize export streamer manager.
         
@@ -407,7 +409,7 @@ class FFLazyLoaderManager:
     Loads data on-demand to minimize memory usage.
     """
     
-    def __init__(self, config: Union[StorageConfig, FFConfigurationManagerConfigDTO]):
+    def __init__(self, config: FFConfigurationManagerConfigDTO):
         """
         Initialize lazy loader manager.
         
@@ -469,7 +471,9 @@ class FFLazyLoaderManager:
                             return msg
                         break
         except Exception as e:
-            print(f"Error loading message: {e}")
+            from ff_utils.ff_logging import get_logger
+            logger = get_logger(__name__)
+            logger.error(f"Error loading message: {e}", exc_info=True)
         
         return None
     
@@ -501,7 +505,7 @@ class FFLazyLoaderManager:
         
         return None
     
-    def _add_to_cache(self, key: str, value: Any):
+    def _add_to_cache(self, key: str, value: Any) -> None:
         """Add item to cache with size limit"""
         # Simple LRU-like behavior
         if len(self._cache) >= self._cache_size_limit:
@@ -511,6 +515,6 @@ class FFLazyLoaderManager:
         
         self._cache[key] = value
     
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """Clear the cache"""
         self._cache.clear()

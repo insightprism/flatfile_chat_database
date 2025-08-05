@@ -29,10 +29,11 @@ class FFCompressionConfig:
                  enabled: bool = True,
                  type: FFCompressionType = FFCompressionType.GZIP,
                  level: int = 6,
-                 min_size_bytes: int = 1024,
+                 min_size_bytes: Optional[int] = None,
                  compress_messages: bool = True,
                  compress_documents: bool = True,
-                 compress_context: bool = True):
+                 compress_context: bool = True,
+                 config: Optional[FFConfigurationManagerConfigDTO] = None):
         """
         Initialize compression configuration.
         
@@ -40,15 +41,16 @@ class FFCompressionConfig:
             enabled: Whether compression is enabled
             type: Compression algorithm to use
             level: Compression level (1-9, where 9 is max compression)
-            min_size_bytes: Minimum size before compression is applied
+            min_size_bytes: Minimum size before compression is applied (uses config if None)
             compress_messages: Whether to compress message files
             compress_documents: Whether to compress documents
             compress_context: Whether to compress context data
+            config: Configuration manager for runtime values
         """
         self.enabled = enabled
         self.type = type
         self.level = min(max(level, 1), 9)  # Clamp to 1-9
-        self.min_size_bytes = min_size_bytes
+        self.min_size_bytes = min_size_bytes or (config.runtime.compression_min_size_bytes if config else 1024)
         self.compress_messages = compress_messages
         self.compress_documents = compress_documents
         self.compress_context = compress_context
@@ -105,7 +107,8 @@ class FFCompressionManager:
             return data
         
         # Only use compression if it's beneficial
-        if len(compressed) < len(data) * 0.9:  # At least 10% reduction
+        min_reduction_factor = 1.0 - (self.config.runtime.compression_min_reduction_percent / 100.0)
+        if len(compressed) < len(data) * min_reduction_factor:
             return compressed
         else:
             return data
@@ -151,7 +154,7 @@ class FFCompressionManager:
             output_path = file_path.with_suffix(file_path.suffix + '.gz')
         
         # Read and compress in chunks for large files
-        chunk_size = 1024 * 1024  # 1MB chunks
+        chunk_size = self.config.runtime.compression_chunk_size_bytes
         
         if self.compression_config.type == FFCompressionType.GZIP:
             with open(file_path, 'rb') as f_in:

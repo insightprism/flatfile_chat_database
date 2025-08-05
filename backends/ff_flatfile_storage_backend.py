@@ -284,9 +284,14 @@ class FFFlatfileStorageBackend(FFStorageBackendBase):
             })
             
             # Consider unhealthy if disk is too full
-            if used_percentage > 90:
+            warning_threshold = self.config.runtime.disk_usage_warning_threshold
+            critical_threshold = self.config.runtime.disk_usage_critical_threshold
+            
+            if used_percentage > critical_threshold:
                 base_health["healthy"] = False
-                base_health["warnings"] = base_health.get("warnings", []) + ["Disk usage above 90%"]
+                base_health["errors"] = base_health.get("errors", []) + [f"Disk usage above {critical_threshold}%"]
+            elif used_percentage > warning_threshold:
+                base_health["warnings"] = base_health.get("warnings", []) + [f"Disk usage above {warning_threshold}%"]
             
         except Exception as e:
             base_health["healthy"] = False
