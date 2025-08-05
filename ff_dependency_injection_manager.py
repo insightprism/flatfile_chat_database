@@ -660,3 +660,58 @@ def ff_clear_global_container() -> None:
     """
     global _global_container
     _global_container = None
+
+
+def ff_register_service(interface: Type[T], 
+                       implementation: Optional[Type] = None,
+                       factory: Optional[Callable] = None,
+                       instance: Optional[Any] = None,
+                       lifetime: str = FFServiceLifetime.TRANSIENT) -> None:
+    """
+    Register a service with the global container.
+    
+    Args:
+        interface: Service interface type
+        implementation: Concrete implementation class
+        factory: Factory function to create instance
+        instance: Pre-created instance (for singletons)
+        lifetime: Service lifetime
+    """
+    container = ff_get_container()
+    
+    if instance is not None:
+        container.register_singleton(interface, instance=instance)
+    elif factory is not None:
+        container.register_factory(interface, factory, lifetime=lifetime)
+    elif implementation is not None:
+        container.register_transient(interface, implementation)
+    else:
+        raise ValueError("Must provide implementation, factory, or instance")
+
+
+def ff_get_service(interface: Type[T]) -> T:
+    """
+    Get a service from the global container.
+    
+    Args:
+        interface: Service interface type
+        
+    Returns:
+        Service instance
+    """
+    container = ff_get_container()
+    return container.resolve(interface)
+
+
+async def ff_get_service_async(interface: Type[T]) -> T:
+    """
+    Get a service from the global container (async version).
+    
+    Args:
+        interface: Service interface type
+        
+    Returns:
+        Service instance
+    """
+    container = ff_get_container()
+    return await container.resolve_async(interface)

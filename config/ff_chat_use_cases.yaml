@@ -1,0 +1,211 @@
+# FF Chat Use Cases Configuration
+# Defines the available use cases for the FF Chat system
+
+use_cases:
+  
+  # Basic Use Cases
+  basic_chat:
+    description: "Simple 1:1 text conversation using FF storage"
+    category: "basic"
+    components: ["ff_text_chat"]
+    mode: "ff_storage"
+    priority: 100
+    enabled: true
+    settings:
+      max_history: 10
+      response_style: "conversational"
+      timeout_seconds: 30
+    requirements:
+      min_ff_version: "2.0.0"
+      required_managers: ["storage"]
+  
+  multimodal_chat:
+    description: "1:1 conversation with multimedia support using FF document processing"
+    category: "basic"
+    components: ["ff_text_chat", "ff_multimodal"]
+    mode: "ff_enhanced"
+    priority: 90
+    enabled: true
+    settings:
+      supported_formats: ["text", "image", "pdf", "audio"]
+      max_file_size: "50MB"
+      max_attachments: 5
+      timeout_seconds: 60
+    requirements:
+      min_ff_version: "2.0.0"
+      required_managers: ["storage", "document_processing"]
+  
+  rag_chat:
+    description: "1:1 conversation with knowledge injection using FF vector search"
+    category: "basic"
+    components: ["ff_text_chat", "ff_rag"]
+    mode: "ff_enhanced"
+    priority: 85
+    enabled: true
+    settings:
+      max_context_docs: 5
+      similarity_threshold: 0.7
+      search_timeout_seconds: 10
+      max_context_length: 2000
+    requirements:
+      min_ff_version: "2.0.0"
+      required_managers: ["storage", "search", "vector_storage"]
+  
+  # Context & Memory Use Cases
+  memory_chat:
+    description: "Long-term memory across sessions using FF storage"
+    category: "context_memory"
+    components: ["ff_text_chat", "ff_memory"]
+    mode: "ff_enhanced"
+    priority: 80
+    enabled: true
+    settings:
+      memory_type: "episodic"
+      retention_days: 30
+      max_memories: 100
+      memory_similarity_threshold: 0.6
+    requirements:
+      min_ff_version: "2.0.0"
+      required_managers: ["storage", "vector_storage"]
+  
+  thought_partner:
+    description: "Long-term thinking companion with context awareness"
+    category: "context_memory"
+    components: ["ff_text_chat", "ff_memory", "ff_context"]
+    mode: "ff_enhanced"
+    priority: 75
+    enabled: false  # Will be enabled in Phase 2
+    settings:
+      memory_type: "semantic"
+      context_window: 20
+      reflection_enabled: true
+    requirements:
+      min_ff_version: "2.0.0"
+      required_managers: ["storage", "vector_storage", "context"]
+  
+  story_world_chat:
+    description: "Persistent story world with character memory"
+    category: "context_memory"
+    components: ["ff_text_chat", "ff_memory", "ff_persona"]
+    mode: "ff_enhanced"
+    priority: 70
+    enabled: false  # Will be enabled in Phase 2
+    settings:
+      world_persistence: true
+      character_memory: true
+      narrative_consistency: true
+    requirements:
+      min_ff_version: "2.0.0"
+      required_managers: ["storage", "vector_storage", "panel"]
+  
+  # Specialized Use Cases (Phase 2)
+  translation_chat:
+    description: "Multi-language translation with cultural context"
+    category: "specialized"
+    components: ["ff_text_chat", "ff_multimodal", "ff_tools", "ff_memory", "ff_persona"]
+    mode: "ff_enhanced"
+    priority: 65
+    enabled: false
+    settings:
+      supported_languages: ["en", "es", "fr", "de", "it", "pt", "zh", "ja", "ko"]
+      cultural_context: true
+      formality_detection: true
+    requirements:
+      min_ff_version: "2.0.0"
+      required_managers: ["storage", "tools", "vector_storage"]
+  
+  personal_assistant:
+    description: "AI personal assistant with tool integration"
+    category: "specialized"
+    components: ["ff_text_chat", "ff_tools", "ff_memory", "ff_persona"]
+    mode: "ff_enhanced"
+    priority: 60
+    enabled: false
+    settings:
+      calendar_integration: true
+      email_integration: true
+      task_management: true
+      proactive_suggestions: true
+    requirements:
+      min_ff_version: "2.0.0"
+      required_managers: ["storage", "tools", "vector_storage"]
+  
+  interactive_tutor:
+    description: "Adaptive learning tutor with progress tracking"
+    category: "specialized"
+    components: ["ff_text_chat", "ff_persona"]
+    mode: "ff_enhanced"
+    priority: 55
+    enabled: false
+    settings:
+      adaptive_difficulty: true
+      progress_tracking: true
+      learning_style_detection: true
+    requirements:
+      min_ff_version: "2.0.0"
+      required_managers: ["storage", "panel"]
+  
+  # Multi-Participant Use Cases (Phase 2)
+  multi_ai_panel:
+    description: "Multiple AI personas discussing topics"
+    category: "multi_participant"
+    components: ["ff_multi_agent", "ff_memory", "ff_persona"]
+    mode: "ff_enhanced"
+    priority: 50
+    enabled: false
+    settings:
+      max_participants: 5
+      moderation_enabled: true
+      consensus_building: true
+    requirements:
+      min_ff_version: "2.0.0"
+      required_managers: ["storage", "panel", "vector_storage"]
+  
+  ai_debate:
+    description: "Structured debate between AI personas"
+    category: "multi_participant"
+    components: ["ff_multi_agent", "ff_persona", "ff_trace"]
+    mode: "ff_enhanced"
+    priority: 45
+    enabled: false
+    settings:
+      debate_structure: "oxford"
+      time_limits: true
+      argument_tracking: true
+    requirements:
+      min_ff_version: "2.0.0"
+      required_managers: ["storage", "panel"]
+  
+  topic_delegation:
+    description: "Route topics to specialized AI experts"
+    category: "multi_participant"
+    components: ["ff_text_chat", "ff_rag", "ff_multi_agent", "ff_router"]
+    mode: "ff_enhanced"
+    priority: 40
+    enabled: false
+    settings:
+      auto_routing: true
+      expert_selection: true
+      confidence_threshold: 0.8
+    requirements:
+      min_ff_version: "2.0.0"
+      required_managers: ["storage", "search", "panel"]
+
+# Global settings
+global_settings:
+  max_concurrent_use_cases: 10
+  default_timeout: 30
+  enable_use_case_caching: true
+  enable_statistics_tracking: true
+  
+# Development settings
+development:
+  enable_debug_logging: true
+  mock_external_services: true
+  reduced_timeouts: true
+  
+# Production settings  
+production:
+  enable_debug_logging: false
+  mock_external_services: false
+  enhanced_security: true

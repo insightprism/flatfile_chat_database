@@ -1,0 +1,236 @@
+# FF Chat Components Configuration
+# Defines component configurations and settings for the FF Chat system
+
+components:
+  
+  # Core Text Chat Component
+  ff_text_chat:
+    description: "Basic text processing using FF storage backend"
+    category: "core"
+    enabled: true
+    priority: 100
+    settings:
+      max_message_length: 4000
+      response_timeout: 30
+      context_window: 10
+      enable_streaming: false
+    backends:
+      storage: "required"
+      search: "optional"
+    
+  # Multimodal Component
+  ff_multimodal:
+    description: "Multimedia processing using FF document manager"
+    category: "enhanced"
+    enabled: true
+    priority: 90
+    settings:
+      supported_formats: ["text", "image", "pdf", "docx", "audio", "video"]
+      max_file_size: "50MB"
+      max_files_per_message: 5
+      image_processing: true
+      text_extraction: true
+      audio_transcription: false  # Phase 2
+    backends:
+      storage: "required"
+      document_processing: "required"
+      
+  # RAG Component
+  ff_rag:
+    description: "Retrieval-Augmented Generation using FF vector storage"
+    category: "enhanced"
+    enabled: true
+    priority: 85
+    settings:
+      max_context_documents: 5
+      similarity_threshold: 0.7
+      max_context_length: 2000
+      rerank_results: false  # Phase 2
+      cite_sources: true
+    backends:
+      storage: "required"
+      search: "required"
+      vector_storage: "required"
+      
+  # Memory Component
+  ff_memory:
+    description: "Long-term memory using FF storage and vector search"
+    category: "enhanced"
+    enabled: true
+    priority: 80
+    settings:
+      memory_types: ["episodic", "semantic"]
+      max_memories_per_user: 1000
+      memory_retention_days: 30
+      similarity_threshold: 0.6
+      auto_summarization: false  # Phase 2
+    backends:
+      storage: "required"
+      vector_storage: "required"
+      
+  # Multi-Agent Component (Phase 2)
+  ff_multi_agent:
+    description: "Multi-agent coordination using FF panel manager"
+    category: "advanced"
+    enabled: false
+    priority: 75
+    settings:
+      max_agents: 5
+      coordination_strategy: "sequential"
+      consensus_required: false
+      agent_memory: true
+    backends:
+      storage: "required"
+      panel: "required"
+      vector_storage: "optional"
+      
+  # Tools Component (Phase 2)
+  ff_tools:
+    description: "External tool integration capabilities"
+    category: "advanced" 
+    enabled: false
+    priority: 70
+    settings:
+      max_tools_per_message: 3
+      tool_timeout: 30
+      sandbox_execution: true
+      result_caching: true
+    backends:
+      storage: "required"
+      document_processing: "optional"
+      
+  # Router Component (Phase 2)
+  ff_router:
+    description: "Intelligent routing to specialized components"
+    category: "advanced"
+    enabled: false
+    priority: 65
+    settings:
+      routing_strategy: "confidence_based"
+      min_confidence: 0.8
+      fallback_component: "ff_text_chat"
+      learn_from_feedback: true
+    backends:
+      storage: "required"
+      search: "required"
+      
+  # Persona Component (Phase 2)
+  ff_persona:
+    description: "Dynamic persona management using FF panels"
+    category: "advanced"
+    enabled: false
+    priority: 60
+    settings:
+      max_personas_per_session: 3
+      persona_consistency: true
+      dynamic_switching: false
+      persona_memory: true
+    backends:
+      storage: "required"
+      panel: "required"
+      
+  # Trace Component (Phase 2)
+  ff_trace:
+    description: "Advanced logging and tracing for development"
+    category: "development"
+    enabled: false
+    priority: 55
+    settings:
+      trace_level: "info"
+      include_context: true
+      include_embeddings: false
+      max_trace_history: 100
+    backends:
+      storage: "required"
+      
+  # Context Component (Phase 2)
+  ff_context:
+    description: "Advanced context management and situational awareness"
+    category: "enhanced"
+    enabled: false
+    priority: 50
+    settings:
+      context_window: 20
+      context_compression: false
+      situational_awareness: true
+      context_retrieval: true
+    backends:
+      storage: "required"
+      context: "required"
+      vector_storage: "optional"
+
+# Component Dependencies
+dependencies:
+  ff_multimodal:
+    requires: ["ff_text_chat"]
+    optional: []
+    
+  ff_rag:
+    requires: ["ff_text_chat"]
+    optional: ["ff_memory"]
+    
+  ff_memory:
+    requires: ["ff_text_chat"]
+    optional: []
+    
+  ff_multi_agent:
+    requires: ["ff_text_chat", "ff_persona"]
+    optional: ["ff_memory", "ff_rag"]
+    
+  ff_tools:
+    requires: ["ff_text_chat"]
+    optional: ["ff_memory", "ff_rag"]
+    
+  ff_router:
+    requires: ["ff_text_chat"]
+    optional: ["ff_memory"]
+    
+  ff_persona:
+    requires: ["ff_text_chat"]
+    optional: ["ff_memory"]
+    
+  ff_trace:
+    requires: []
+    optional: []
+    
+  ff_context:
+    requires: ["ff_text_chat"]
+    optional: ["ff_memory", "ff_rag"]
+
+# Backend Manager Mappings
+backend_mappings:
+  storage: "FFCoreStorageManager"
+  search: "FFSearchManager" 
+  vector_storage: "FFVectorStorageManager"
+  document_processing: "FFDocumentProcessingManager"
+  panel: "FFPanelManager"
+  context: "FFContextManager"
+  user: "FFUserManager"
+  session: "FFSessionManager"
+
+# Global Component Settings
+global_settings:
+  max_concurrent_components: 5
+  component_timeout: 60
+  enable_component_caching: true
+  cache_ttl: 300
+  enable_performance_monitoring: true
+  
+# Environment-specific settings
+development:
+  enable_debug_mode: true
+  reduce_timeouts: true
+  verbose_logging: true
+  mock_expensive_operations: true
+  
+production:
+  enable_debug_mode: false
+  enhanced_security: true
+  performance_optimizations: true
+  error_reporting: true
+  
+test:
+  enable_debug_mode: true
+  mock_all_backends: true
+  deterministic_responses: true
+  fast_timeouts: true
