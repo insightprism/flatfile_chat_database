@@ -10,6 +10,10 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
 from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
+from ff_utils.ff_logging import get_logger
+
+# Module logger
+logger = get_logger(__name__)
 
 # PrismMind Engine Imports
 try:
@@ -18,7 +22,7 @@ try:
     PRISMMIND_AVAILABLE = True
 except ImportError:
     PRISMMIND_AVAILABLE = False
-    print("PrismMind not available. Install PrismMind for full functionality.")
+    logger.warning("PrismMind not available. Install PrismMind for full functionality.")
 
 
 @dataclass
@@ -111,7 +115,7 @@ class FFEmbeddingManager:
                 raise RuntimeError(f"Embedding generation failed: {result.get('metadata', {}).get('error')}")
                 
         except Exception as e:
-            print(f"Error generating embeddings: {e}")
+            logger.error(f"Error generating embeddings: {e}", exc_info=True)
             # Return empty embeddings as fallback
             return [{
                 "embedding_vector": [0.0] * provider_config.embedding_dimension,

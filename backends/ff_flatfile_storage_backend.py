@@ -17,6 +17,7 @@ from ff_utils import (
     ff_atomic_write, ff_atomic_append, ff_safe_read, ff_ensure_directory, ff_safe_delete,
     ff_file_exists, ff_directory_exists, ff_list_files, ff_get_file_size
 )
+from ff_utils.ff_logging import get_logger
 
 
 class FFFlatfileStorageBackend(FFStorageBackendBase):
@@ -34,7 +35,8 @@ class FFFlatfileStorageBackend(FFStorageBackendBase):
             config: Storage configuration
         """
         super().__init__(config)
-        self.base_path = Path(config.storage.base_path).resolve()
+        self.base_path = Path(config.storage.base_path)
+        self.logger = get_logger(__name__)
     
     async def initialize(self) -> bool:
         """
@@ -59,7 +61,7 @@ class FFFlatfileStorageBackend(FFStorageBackendBase):
             return True
             
         except Exception as e:
-            print(f"Failed to initialize flatfile backend: {e}")
+            self.logger.error(f"Failed to initialize flatfile backend: {e}", exc_info=True)
             return False
     
     async def read(self, key: str) -> Optional[bytes]:
@@ -214,7 +216,7 @@ class FFFlatfileStorageBackend(FFStorageBackendBase):
             }
             
         except Exception as e:
-            print(f"Failed to get metadata for {key}: {e}")
+            self.logger.error(f"Failed to get metadata for {key}: {e}", exc_info=True)
             return None
     
     async def move(self, source_key: str, dest_key: str) -> bool:
@@ -332,7 +334,7 @@ class FFFlatfileStorageBackend(FFStorageBackendBase):
                 import shutil
                 shutil.copytree(path, backup_path)
                 
-            print(f"Created backup: {backup_path}")
+            self.logger.info(f"Created backup: {backup_path}")
             
         except Exception as e:
-            print(f"Failed to create backup of {path}: {e}")
+            self.logger.error(f"Failed to create backup of {path}: {e}", exc_info=True)

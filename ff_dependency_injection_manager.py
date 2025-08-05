@@ -133,7 +133,7 @@ class FFDependencyInjectionManager:
 
         dependencies = []
         if implementation and not factory and not instance:
-            dependencies = self._get_constructor_dependencies( )
+            dependencies = self._get_constructor_dependencies(implementation)
         
         descriptor = FFServiceDescriptor(
             interface=interface,
@@ -381,6 +381,8 @@ def ff_create_application_container(config_path: Optional[Union[str, Path]] = No
     from ff_document_processing_manager import FFDocumentProcessingManager
     from ff_storage_manager import FFStorageManager
     from ff_utils.ff_file_ops import FileOperationManager
+    from ff_embedding_functions import generate_embeddings
+    from functools import partial
     
     container = FFDependencyInjectionManager()
     
@@ -438,14 +440,18 @@ def ff_create_application_container(config_path: Optional[Union[str, Path]] = No
             backend=backend
         )
         
-        # Inject other services
-        manager.search_engine = search
-        manager.vector_storage = vector_store
-        manager.document_processor = processor
+        # No need to inject services - they will be lazily loaded via DI container
         
         return manager
     
     container.register_singleton(StorageProtocol, factory=storage_factory)
+    
+    # Register embedding function
+    def embedding_factory(c: FFDependencyInjectionManager):
+        config = c.resolve(FFConfigurationManagerConfigDTO)
+        return partial(generate_embeddings, config=config)
+    
+    container.register_singleton("generate_embeddings", factory=embedding_factory)
     
     return container
 

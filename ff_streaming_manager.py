@@ -426,7 +426,7 @@ class FFLazyLoaderManager:
         else:
             raise ValueError("Configuration must have either 'storage_base_path' or 'storage.base_path' attribute")
         self._cache = {}
-        self._cache_size_limit = 100  # Maximum cached items
+        self._cache_size_limit = config.runtime.cache_size_limit if hasattr(config, 'runtime') else 100
     
     async def get_message_lazy(self, user_id: str, session_id: str, 
                              message_index: int) -> Optional[FFMessageDTO]:

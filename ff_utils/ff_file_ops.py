@@ -73,7 +73,10 @@ class FFFileLock:
         start_time = time.time()
         
         # Get retry parameters from config or use defaults
-        if self.config:
+        if self.config and hasattr(self.config, 'runtime'):
+            retry_delay = self.config.runtime.file_retry_delay_ms / 1000.0  # Convert ms to seconds
+            max_delay = self.config.runtime.file_retry_max_delay_ms / 1000.0
+        elif self.config:
             retry_delay = self.config.locking.retry_initial_delay_ms / 1000.0  # Convert ms to seconds
             max_delay = self.config.locking.retry_max_delay_seconds
         else:

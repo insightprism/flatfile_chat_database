@@ -1,0 +1,14 @@
+{
+  "created_at": "2025-08-01T09:00:19.545892",
+  "metadata": {
+    "department": "testing",
+    "role": "tennis player"
+  },
+  "preferences": {
+    "language": "en",
+    "theme": "dark"
+  },
+  "updated_at": "2025-08-01T09:00:19.545895",
+  "user_id": "Han",
+  "username": "Han Chau"
+}

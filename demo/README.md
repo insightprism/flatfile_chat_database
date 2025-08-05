@@ -233,15 +233,15 @@ To integrate the flatfile database into your own project:
 ```python
 # Basic integration example
 from ff_storage_manager import FFStorageManager
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import load_config
 
 # Initialize
-config = StorageConfig()
-config.storage_base_path = "./my_chat_data"
+config = load_config()
+config.storage.base_path = "./my_chat_data"
 storage = FFStorageManager(config)
 
 # Use the API demonstrated in the demos
-user_profile = UserProfile(user_id="my_user", display_name="My User")
+user_profile = FFUserProfileDTO(user_id="my_user", username="My User")
 await storage.store_user_profile(user_profile)
 ```
 

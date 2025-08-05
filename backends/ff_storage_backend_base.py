@@ -39,7 +39,7 @@ class FFStorageBackendBase(ABC):
         Returns:
             True if initialization successful
         """
-        pass
+        raise NotImplementedError("Subclasses must implement initialize()")
     
     @abstractmethod
     async def read(self, key: str) -> Optional[bytes]:
@@ -52,7 +52,7 @@ class FFStorageBackendBase(ABC):
         Returns:
             Data as bytes or None if not found
         """
-        pass
+        raise NotImplementedError("Subclasses must implement read()")
     
     @abstractmethod
     async def write(self, key: str, data: bytes) -> bool:
@@ -66,7 +66,7 @@ class FFStorageBackendBase(ABC):
         Returns:
             True if successful
         """
-        pass
+        raise NotImplementedError("Subclasses must implement write()")
     
     @abstractmethod
     async def append(self, key: str, data: bytes) -> bool:
@@ -80,7 +80,7 @@ class FFStorageBackendBase(ABC):
         Returns:
             True if successful
         """
-        pass
+        raise NotImplementedError("Subclasses must implement append()")
     
     @abstractmethod
     async def delete(self, key: str) -> bool:
@@ -93,7 +93,7 @@ class FFStorageBackendBase(ABC):
         Returns:
             True if successful
         """
-        pass
+        raise NotImplementedError("Subclasses must implement delete()")
     
     @abstractmethod
     async def exists(self, key: str) -> bool:
@@ -106,7 +106,7 @@ class FFStorageBackendBase(ABC):
         Returns:
             True if key exists
         """
-        pass
+        raise NotImplementedError("Subclasses must implement exists()")
     
     @abstractmethod
     async def list_keys(self, prefix: str, pattern: Optional[str] = None) -> List[str]:
@@ -120,7 +120,7 @@ class FFStorageBackendBase(ABC):
         Returns:
             List of matching keys
         """
-        pass
+        raise NotImplementedError("Subclasses must implement list_keys()")
     
     @abstractmethod
     async def get_size(self, key: str) -> int:
@@ -133,7 +133,7 @@ class FFStorageBackendBase(ABC):
         Returns:
             Size in bytes or -1 if not found
         """
-        pass
+        raise NotImplementedError("Subclasses must implement get_size()")
     
     @abstractmethod
     async def get_metadata(self, key: str) -> Optional[Dict[str, Any]]:
@@ -146,7 +146,7 @@ class FFStorageBackendBase(ABC):
         Returns:
             Metadata dictionary or None if not found
         """
-        pass
+        raise NotImplementedError("Subclasses must implement get_metadata()")
     
     async def move(self, source_key: str, dest_key: str) -> bool:
         """

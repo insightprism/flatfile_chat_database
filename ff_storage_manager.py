@@ -69,25 +69,92 @@ class FFStorageManager:
         self.backend = backend or FlatfileBackend(self.config)
         self.base_path = Path(self.config.storage.base_path)
         self._initialized = False
-        self.search_engine = FFSearchManager(self.config)
         
-        # Initialize vector components
-        self.vector_storage = FFVectorStorageManager(self.config)
-        self.chunking_engine = FFChunkingManager(self.config)
-        self.embedding_engine = FFEmbeddingManager(self.config)
+        # Lazy-loaded components
+        self._search_engine = None
+        self._vector_storage = None
+        self._chunking_engine = None
+        self._embedding_engine = None
+        self._document_processor = None
         
-        # Initialize PrismMind integration
-        self.prismmind_processor = None
-        self.prismmind_available = PRISMMIND_INTEGRATION_AVAILABLE and enable_prismmind
-        
-        if self.prismmind_available:
+        # PrismMind configuration
+        self._prismmind_processor = None
+        self._prismmind_available = PRISMMIND_INTEGRATION_AVAILABLE and enable_prismmind
+        self._enable_prismmind = enable_prismmind
+    
+    @property
+    def search_engine(self):
+        """Lazy-load search engine."""
+        if self._search_engine is None:
+            from ff_dependency_injection_manager import ff_get_container
+            from ff_protocols import SearchProtocol
+            try:
+                self._search_engine = ff_get_container().resolve(SearchProtocol)
+            except:
+                # Fallback to direct instantiation
+                self._search_engine = FFSearchManager(self.config)
+        return self._search_engine
+    
+    @property
+    def vector_storage(self):
+        """Lazy-load vector storage."""
+        if self._vector_storage is None:
+            from ff_dependency_injection_manager import ff_get_container
+            from ff_protocols import VectorStoreProtocol
+            try:
+                self._vector_storage = ff_get_container().resolve(VectorStoreProtocol)
+            except:
+                # Fallback to direct instantiation
+                self._vector_storage = FFVectorStorageManager(self.config)
+        return self._vector_storage
+    
+    @property
+    def chunking_engine(self):
+        """Lazy-load chunking engine."""
+        if self._chunking_engine is None:
+            self._chunking_engine = FFChunkingManager(self.config)
+        return self._chunking_engine
+    
+    @property
+    def embedding_engine(self):
+        """Lazy-load embedding engine."""
+        if self._embedding_engine is None:
+            self._embedding_engine = FFEmbeddingManager(self.config)
+        return self._embedding_engine
+    
+    @property
+    def document_processor(self):
+        """Lazy-load document processor."""
+        if self._document_processor is None:
+            from ff_dependency_injection_manager import ff_get_container
+            from ff_protocols import DocumentProcessorProtocol
+            try:
+                self._document_processor = ff_get_container().resolve(DocumentProcessorProtocol)
+            except:
+                # Fallback to direct instantiation
+                from ff_document_processing_manager import FFDocumentProcessingManager
+                self._document_processor = FFDocumentProcessingManager(self.config)
+        return self._document_processor
+    
+    @property
+    def prismmind_processor(self):
+        """Lazy-load PrismMind processor."""
+        if self._prismmind_processor is None and self._prismmind_available:
             try:
                 # Create PrismMind configuration from flatfile config
                 prismmind_config = FlatfilePrismMindConfig(flatfile_config=self.config)
-                self.prismmind_processor = FlatfileDocumentProcessor(prismmind_config)
+                self._prismmind_processor = FlatfileDocumentProcessor(prismmind_config)
             except Exception as e:
-                print(f"Failed to initialize PrismMind integration: {e}")
-                self.prismmind_available = False
+                from ff_utils.ff_logging import get_logger
+                logger = get_logger(__name__)
+                logger.error(f"Failed to initialize PrismMind integration: {e}", exc_info=True)
+                self._prismmind_available = False
+        return self._prismmind_processor
+    
+    @property
+    def prismmind_available(self):
+        """Check if PrismMind is available."""
+        return self._prismmind_available
     
     async def initialize(self) -> bool:
         """

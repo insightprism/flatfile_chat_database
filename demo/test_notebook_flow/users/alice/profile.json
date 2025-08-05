@@ -1,0 +1,14 @@
+{
+  "created_at": "2025-07-31T17:42:12.159420",
+  "metadata": {
+    "department": "AI Research",
+    "role": "data_scientist"
+  },
+  "preferences": {
+    "language": "en",
+    "theme": "dark"
+  },
+  "updated_at": "2025-07-31T17:42:12.159424",
+  "user_id": "alice",
+  "username": "Alice Johnson"
+}

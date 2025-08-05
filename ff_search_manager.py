@@ -16,6 +16,7 @@ from collections import defaultdict, Counter
 from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
 from ff_class_configs.ff_chat_entities_config import FFMessageDTO, FFSessionDTO, FFDocumentDTO, FFSituationalContextDTO, SearchType
 from ff_utils import ff_read_json, ff_read_jsonl, ff_get_user_path
+from ff_utils.ff_logging import get_logger
 
 
 @dataclass
@@ -77,16 +78,17 @@ class FFSearchManager:
         """
         self.config = config
         self.base_path = Path(config.storage.base_path)
+        self.logger = get_logger(__name__)
         
-        # Compile regex patterns for entity extraction
-        self.entity_patterns = {
-            "urls": re.compile(r'https?://[^\s]+'),
-            "emails": re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'),
-            "code_blocks": re.compile(r'```[\s\S]*?```'),
-            "mentions": re.compile(r'@\w+'),
-            "hashtags": re.compile(r'#\w+'),
-            "numbers": re.compile(r'\b\d+\.?\d*\b'),
-        }
+        # Compile regex patterns for entity extraction from configuration
+        self.entity_patterns = {}
+        for name, pattern in config.runtime.entity_patterns.items():
+            try:
+                self.entity_patterns[name] = re.compile(pattern)
+            except re.error as e:
+                # Skip invalid patterns with warning
+                self.logger.warning(f"Invalid regex pattern for '{name}': {e}")
+                continue
     
     async def search(self, query: FFSearchQueryDTO) -> List[FFSearchResultDTO]:
         """

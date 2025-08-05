@@ -12,7 +12,7 @@ from typing import Union, Optional, Dict, Any
 import json
 from enum import Enum
 
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
 
 
 class FFCompressionType(Enum):
@@ -61,7 +61,7 @@ class FFCompressionManager:
     Provides transparent compression to reduce storage requirements.
     """
     
-    def __init__(self, config: StorageConfig, 
+    def __init__(self, config: FFConfigurationManagerConfigDTO, 
                  compression_config: Optional[FFCompressionConfig] = None):
         """
         Initialize compression manager.
@@ -261,11 +261,11 @@ class FFCompressionManager:
             return False
         
         # Check file type
-        if file_path.name == self.config.messages_filename:
+        if file_path.name == self.config.storage.messages_filename:
             return self.compression_config.compress_messages
-        elif file_path.name == self.config.situational_context_filename:
+        elif file_path.name == self.config.storage.situational_context_filename:
             return self.compression_config.compress_context
-        elif file_path.parent.name == self.config.document_storage_subdirectory_name:
+        elif file_path.parent.name == self.config.document.storage_subdirectory:
             return self.compression_config.compress_documents
         
         # Default to True for other files

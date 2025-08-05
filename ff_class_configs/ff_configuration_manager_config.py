@@ -18,6 +18,7 @@ from .ff_vector_storage_config import FFVectorStorageConfigDTO
 from .ff_document_config import FFDocumentConfigDTO
 from .ff_locking_config import FFLockingConfigDTO
 from .ff_persona_panel_config import FFPersonaPanelConfigDTO
+from .ff_runtime_config import FFRuntimeConfigDTO
 
 
 @dataclass
@@ -35,6 +36,7 @@ class FFConfigurationManagerConfigDTO:
     document: FFDocumentConfigDTO = field(default_factory=FFDocumentConfigDTO)
     locking: FFLockingConfigDTO = field(default_factory=FFLockingConfigDTO)
     panel: FFPersonaPanelConfigDTO = field(default_factory=FFPersonaPanelConfigDTO)
+    runtime: FFRuntimeConfigDTO = field(default_factory=FFRuntimeConfigDTO)
     
     # Manager settings
     config_file_path: Optional[Path] = None
@@ -134,6 +136,8 @@ class FFConfigurationManagerConfigDTO:
             self.locking = FFLockingConfigDTO.from_dict(data["locking"])
         if "panel" in data:
             self.panel = FFPersonaPanelConfigDTO.from_dict(data["panel"])
+        if "runtime" in data:
+            self.runtime = FFRuntimeConfigDTO.from_dict(data["runtime"])
     
     def save_to_file(self, file_path: Path) -> None:
         """
@@ -148,7 +152,8 @@ class FFConfigurationManagerConfigDTO:
             "vector": self.vector.to_dict(),
             "document": self.document.to_dict(),
             "locking": self.locking.to_dict(),
-            "panel": self.panel.to_dict()
+            "panel": self.panel.to_dict(),
+            "runtime": self.runtime.to_dict()
         }
         
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -164,6 +169,7 @@ class FFConfigurationManagerConfigDTO:
         self.document = self.document.apply_environment_overrides("CHATDB_DOCUMENT")
         self.locking = self.locking.apply_environment_overrides("CHATDB_LOCKING")
         self.panel = self.panel.apply_environment_overrides("CHATDB_PANEL")
+        self.runtime = self.runtime.apply_environment_overrides("CHATDB_RUNTIME")
         
         # Also check for general overrides
         self._apply_general_overrides()
@@ -201,7 +207,8 @@ class FFConfigurationManagerConfigDTO:
             ("vector", self.vector),
             ("document", self.document),
             ("locking", self.locking),
-            ("panel", self.panel)
+            ("panel", self.panel),
+            ("runtime", self.runtime)
         ]:
             domain_errors = config.validate()
             for error in domain_errors:
@@ -270,6 +277,7 @@ class FFConfigurationManagerConfigDTO:
             "document": self.document.to_dict(),
             "locking": self.locking.to_dict(),
             "panel": self.panel.to_dict(),
+            "runtime": self.runtime.to_dict(),
             "environment": self.environment
         }
     

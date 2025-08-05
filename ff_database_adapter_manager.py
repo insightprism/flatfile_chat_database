@@ -13,11 +13,11 @@ from dataclasses import dataclass
 import sqlite3
 from abc import ABC, abstractmethod
 
-from ff_config_legacy_adapter import StorageConfig
+from ff_class_configs.ff_configuration_manager_config import FFConfigurationManagerConfigDTO
 from ff_storage_manager import FFStorageManager
 from ff_class_configs.ff_chat_entities_config import FFMessageDTO, FFSessionDTO, FFDocumentDTO, FFSituationalContextDTO, FFUserProfileDTO
 from ff_streaming_manager import FFExportStreamerManager, FFStreamConfigDTO
-from ff_compression_manager import FFFFCompressionManager, FFFFCompressionConfigDTO, FFCompressionType
+from ff_compression_manager import FFCompressionManager, FFCompressionConfig, FFCompressionType
 
 
 @dataclass
@@ -354,7 +354,7 @@ class FFFlatfileExporter:
     """
     
     def __init__(self, storage_manager: FFStorageManager,
-                 compression_config: Optional[FFFFCompressionConfigDTO] = None):
+                 compression_config: Optional[FFCompressionConfig] = None):
         """
         Initialize exporter.
         
@@ -471,7 +471,7 @@ class FFFlatfileExporter:
         return stats
     
     async def _export_user(self, user_id: str, adapter: FFDatabaseAdapterManager,
-                         stats: FFMigrationStats):
+                         stats: FFMigrationStatsDTO):
         """Export a single user to database"""
         # Export user profile
         profile = await self.storage.get_user_profile(user_id)
@@ -520,7 +520,7 @@ class FFFlatfileExporter:
                 stats.add_error("session_export", str(e), session.session_id)
     
     async def _export_user_to_dict(self, user_id: str, 
-                                 stats: FFMigrationStats) -> Optional[Dict[str, Any]]:
+                                 stats: FFMigrationStatsDTO) -> Optional[Dict[str, Any]]:
         """Export a single user to dictionary format"""
         user_data = {
             "profile": None,
@@ -625,7 +625,7 @@ class FFDatabaseImporter:
         return stats
     
     async def _import_user_from_dict(self, user_id: str, user_data: Dict[str, Any],
-                                   stats: FFMigrationStats):
+                                   stats: FFMigrationStatsDTO):
         """Import a single user from dictionary"""
         # Create user
         profile = user_data.get("profile", {})
@@ -644,7 +644,7 @@ class FFDatabaseImporter:
                 
                 # Import messages
                 for msg_data in session_data.get("messages", []):
-                    msg = Message.from_dict(msg_data)
+                    msg = FFMessageDTO.from_dict(msg_data)
                     await self.storage.add_message(user_id, created_session_id, msg)
                     stats.total_messages += 1
                 
@@ -656,13 +656,13 @@ class FFDatabaseImporter:
                 
                 # Import context
                 if session_data.get("context"):
-                    context = SituationalContext.from_dict(session_data["context"])
+                    context = FFSituationalContextDTO.from_dict(session_data["context"])
                     await self.storage.update_context(user_id, created_session_id, context)
                     stats.total_contexts += 1
                 
                 # Import context history
                 for snapshot_data in session_data.get("context_history", []):
-                    context = SituationalContext.from_dict(snapshot_data["context"])
+                    context = FFSituationalContextDTO.from_dict(snapshot_data["context"])
                     await self.storage.save_context_snapshot(user_id, created_session_id, context)
                     stats.total_contexts += 1
                 

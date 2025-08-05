@@ -1,0 +1,2 @@
+{"role": "user", "content": "I need help with data preprocessing in Python", "message_id": "msg_49f5d095cf94", "timestamp": "2025-07-31T17:51:01.042832", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "Data preprocessing is important for machine learning. You can use pandas for data cleaning.", "message_id": "msg_995996b0185f", "timestamp": "2025-07-31T17:51:01.042842", "attachments": [], "metadata": {}}

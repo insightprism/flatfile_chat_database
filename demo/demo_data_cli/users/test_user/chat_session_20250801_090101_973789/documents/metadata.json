@@ -1,0 +1,15 @@
+{
+  "41dc4305_test_doc.txt": {
+    "analysis": {},
+    "filename": "41dc4305_test_doc.txt",
+    "metadata": {
+      "type": "test"
+    },
+    "mime_type": "text/plain",
+    "original_name": "test_doc.txt",
+    "path": "users/test_user/chat_session_20250801_090101_973789/documents/41dc4305_test_doc.txt",
+    "size": 71,
+    "uploaded_at": "2025-08-01T09:01:01.982504",
+    "uploaded_by": "test_user"
+  }
+}
