@@ -1,0 +1,37 @@
+{
+  "name": "testing",
+  "description": "Optimized for test environments with fast cleanup",
+  "configuration": {
+    "storage_path": "./test_data",
+    "enable_vector_search": true,
+    "enable_streaming": false,
+    "enable_analytics": false,
+    "enable_compression": false,
+    "backup_enabled": false,
+    "cache_size_mb": 30,
+    "performance_mode": "balanced",
+    "max_session_size_mb": 5,
+    "message_batch_size": 25,
+    "history_page_size": 50,
+    "search_result_limit": 20,
+    "environment": "test"
+  },
+  "performance_optimizations": {
+    "enable_file_locking": false,
+    "validation_enabled": true,
+    "fast_cleanup": true,
+    "cache_ttl": 30
+  },
+  "use_cases": [
+    "unit_testing",
+    "integration_testing",
+    "ci_cd"
+  ],
+  "recommended_for": [
+    "test_environments",
+    "automated_testing",
+    "development_ci"
+  ],
+  "created_at": "2024-01-01T00:00:00",
+  "version": "1.0"
+}

@@ -1,0 +1,36 @@
+{
+  "name": "lightweight",
+  "description": "Minimal resource usage for simple applications",
+  "configuration": {
+    "storage_path": "./data",
+    "enable_vector_search": false,
+    "enable_streaming": false,
+    "enable_analytics": false,
+    "enable_compression": false,
+    "backup_enabled": false,
+    "cache_size_mb": 25,
+    "performance_mode": "speed",
+    "max_session_size_mb": 10,
+    "message_batch_size": 50,
+    "history_page_size": 50,
+    "search_result_limit": 20,
+    "environment": "development"
+  },
+  "performance_optimizations": {
+    "enable_file_locking": false,
+    "minimal_metadata": true,
+    "reduced_logging": true
+  },
+  "use_cases": [
+    "simple_chat",
+    "embedded_systems",
+    "low_resource"
+  ],
+  "recommended_for": [
+    "simple_applications",
+    "resource_constrained",
+    "embedded_systems"
+  ],
+  "created_at": "2024-01-01T00:00:00",
+  "version": "1.0"
+}

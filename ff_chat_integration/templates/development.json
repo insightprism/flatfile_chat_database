@@ -1,0 +1,37 @@
+{
+  "name": "development",
+  "description": "Optimized for development with debugging features",
+  "configuration": {
+    "storage_path": "./dev_data",
+    "enable_vector_search": true,
+    "enable_streaming": false,
+    "enable_analytics": true,
+    "enable_compression": false,
+    "backup_enabled": false,
+    "cache_size_mb": 50,
+    "performance_mode": "balanced",
+    "max_session_size_mb": 50,
+    "message_batch_size": 100,
+    "history_page_size": 50,
+    "search_result_limit": 20,
+    "environment": "development"
+  },
+  "performance_optimizations": {
+    "enable_file_locking": false,
+    "validation_enabled": true,
+    "debug_logging": true,
+    "cache_ttl": 60
+  },
+  "use_cases": [
+    "basic_chat",
+    "testing",
+    "development"
+  ],
+  "recommended_for": [
+    "local_development",
+    "debugging",
+    "testing"
+  ],
+  "created_at": "2024-01-01T00:00:00",
+  "version": "1.0"
+}

@@ -1,0 +1,37 @@
+{
+  "name": "high_performance",
+  "description": "Maximum performance with minimal features",
+  "configuration": {
+    "storage_path": "./data",
+    "enable_vector_search": false,
+    "enable_streaming": true,
+    "enable_analytics": false,
+    "enable_compression": false,
+    "backup_enabled": false,
+    "cache_size_mb": 500,
+    "performance_mode": "speed",
+    "max_session_size_mb": 50,
+    "message_batch_size": 200,
+    "history_page_size": 100,
+    "search_result_limit": 20,
+    "environment": "production"
+  },
+  "performance_optimizations": {
+    "enable_file_locking": false,
+    "validation_enabled": false,
+    "cache_ttl": 600,
+    "memory_optimization": true
+  },
+  "use_cases": [
+    "high_throughput",
+    "real_time_chat",
+    "gaming"
+  ],
+  "recommended_for": [
+    "high_volume_chat",
+    "real_time_applications",
+    "performance_critical"
+  ],
+  "created_at": "2024-01-01T00:00:00",
+  "version": "1.0"
+}

@@ -1,0 +1,37 @@
+{
+  "name": "feature_rich",
+  "description": "All features enabled for full functionality",
+  "configuration": {
+    "storage_path": "./data",
+    "enable_vector_search": true,
+    "enable_streaming": true,
+    "enable_analytics": true,
+    "enable_compression": true,
+    "backup_enabled": true,
+    "cache_size_mb": 150,
+    "performance_mode": "quality",
+    "max_session_size_mb": 50,
+    "message_batch_size": 100,
+    "history_page_size": 50,
+    "search_result_limit": 20,
+    "environment": "production"
+  },
+  "performance_optimizations": {
+    "enable_file_locking": true,
+    "validation_enabled": true,
+    "advanced_search": true,
+    "full_indexing": true
+  },
+  "use_cases": [
+    "ai_assistant",
+    "knowledge_base",
+    "research_chat"
+  ],
+  "recommended_for": [
+    "ai_applications",
+    "research_tools",
+    "advanced_chat_features"
+  ],
+  "created_at": "2024-01-01T00:00:00",
+  "version": "1.0"
+}

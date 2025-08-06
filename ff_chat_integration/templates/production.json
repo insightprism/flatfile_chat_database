@@ -1,0 +1,37 @@
+{
+  "name": "production",
+  "description": "Production-ready with full features and optimization",
+  "configuration": {
+    "storage_path": "./prod_data",
+    "enable_vector_search": true,
+    "enable_streaming": true,
+    "enable_analytics": true,
+    "enable_compression": true,
+    "backup_enabled": true,
+    "cache_size_mb": 200,
+    "performance_mode": "balanced",
+    "max_session_size_mb": 100,
+    "message_batch_size": 100,
+    "history_page_size": 50,
+    "search_result_limit": 20,
+    "environment": "production"
+  },
+  "performance_optimizations": {
+    "enable_file_locking": true,
+    "validation_enabled": false,
+    "cache_ttl": 300,
+    "batch_write_enabled": true
+  },
+  "use_cases": [
+    "all_chat_types",
+    "high_volume",
+    "enterprise"
+  ],
+  "recommended_for": [
+    "production_deployment",
+    "high_traffic",
+    "enterprise"
+  ],
+  "created_at": "2024-01-01T00:00:00",
+  "version": "1.0"
+}
