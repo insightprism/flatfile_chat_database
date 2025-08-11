@@ -1,0 +1,183 @@
+# FF Chat API Production Configuration
+# Override settings for production deployment
+
+# Environment
+environment: production
+
+# API Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  enable_cors: true
+  cors_origins:
+    - "https://yourdomain.com"
+    - "https://api.yourdomain.com"
+  enable_auth: true
+  rate_limit_per_minute: 100
+  max_concurrent_sessions: 1000
+  session_timeout: 3600
+
+# Storage Configuration
+storage:
+  base_path: "/app/data/storage"
+  validate_json_on_read: false
+  max_message_size_bytes: 1048576  # 1MB
+  backup_enabled: true
+  backup_interval_hours: 24
+  retention_days: 365
+
+# Search Configuration
+search:
+  base_path: "/app/data/search"
+  enable_search_cache: true
+  cache_size_mb: 512
+  index_update_interval: 300  # 5 minutes
+
+# Vector Storage Configuration
+vector:
+  base_path: "/app/data/vector"
+  cache_enabled: true
+  cache_size_mb: 1024
+  similarity_threshold: 0.7
+  max_results: 100
+
+# Logging Configuration
+logging:
+  level: INFO
+  format: "json"
+  file_path: "/app/logs/ff_chat_api.log"
+  max_file_size_mb: 100
+  backup_count: 10
+  error_file_path: "/app/logs/errors.log"
+  access_file_path: "/app/logs/access.log"
+
+# Security Configuration
+security:
+  jwt_secret_key: "${JWT_SECRET_KEY}"
+  jwt_algorithm: "HS256"
+  jwt_expiration_hours: 24
+  jwt_refresh_expiration_days: 30
+  bcrypt_rounds: 12
+  api_key_length: 32
+  enable_rate_limiting: true
+  enable_input_validation: true
+  max_request_size_mb: 50
+
+# Redis Configuration (for caching and sessions)
+redis:
+  host: "redis"
+  port: 6379
+  db: 0
+  password: "${REDIS_PASSWORD}"
+  socket_timeout: 5
+  socket_connect_timeout: 5
+  max_connections: 50
+
+# Monitoring Configuration
+monitoring:
+  enable_metrics: true
+  metrics_port: 8001
+  health_check_interval: 30
+  enable_prometheus: true
+  enable_tracing: false
+
+# Performance Configuration
+performance:
+  enable_async_processing: true
+  worker_concurrency: 10
+  max_queue_size: 1000
+  request_timeout: 300
+  websocket_timeout: 3600
+  connection_pool_size: 20
+
+# Feature Flags
+features:
+  enable_websockets: true
+  enable_file_uploads: true
+  enable_multimodal: true
+  enable_rag: true
+  enable_vector_search: true
+  enable_multi_agent: true
+  enable_personas: true
+  enable_tools: true
+
+# Use Case Configuration
+use_cases:
+  basic_chat:
+    enabled: true
+    max_history: 50
+  memory_chat:
+    enabled: true
+    max_history: 100
+    memory_threshold: 0.8
+  rag_chat:
+    enabled: true
+    max_documents: 1000
+    chunk_size: 512
+  multimodal_chat:
+    enabled: true
+    max_file_size_mb: 10
+    supported_formats: ["png", "jpg", "jpeg", "pdf", "txt"]
+  multi_ai_panel:
+    enabled: true
+    max_agents: 5
+  personal_assistant:
+    enabled: true
+    context_window: 4096
+  translation_chat:
+    enabled: true
+    supported_languages: ["en", "es", "fr", "de", "it", "pt", "ru", "zh", "ja", "ko"]
+  scene_critic:
+    enabled: true
+    max_analysis_depth: 3
+
+# Component Configuration
+components:
+  text_chat:
+    enabled: true
+    max_tokens: 4096
+  memory:
+    enabled: true
+    max_memories: 1000
+  multimodal:
+    enabled: true
+    image_processing: true
+    document_processing: true
+  multi_agent:
+    enabled: true
+    max_concurrent_agents: 5
+  tools:
+    enabled: true
+    sandbox_enabled: true
+  topic_router:
+    enabled: true
+    confidence_threshold: 0.7
+  trace_logger:
+    enabled: true
+    detailed_logging: false
+
+# External Services Configuration
+external_services:
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    model: "gpt-4"
+    max_tokens: 4096
+  anthropic:
+    api_key: "${ANTHROPIC_API_KEY}"
+    model: "claude-3-sonnet-20240229"
+  embedding_service:
+    provider: "openai"
+    model: "text-embedding-ada-002"
+
+# Backup and Recovery
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention_days: 90
+  compression: true
+  remote_storage:
+    enabled: false
+    provider: "s3"
+    bucket: "ff-chat-backups"
+    region: "us-east-1"

@@ -1,0 +1,2 @@
+{"role": "user", "content": "What is the capital of France?", "message_id": "msg_02ac52c8cba9", "timestamp": "2025-08-05T19:34:21.368925", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "FF Chat (basic_chat) response to: What is the capital of France?", "message_id": "msg_a757caeec64a", "timestamp": "2025-08-05T19:34:21.372566", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "basic_chat"}}

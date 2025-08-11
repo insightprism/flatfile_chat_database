@@ -1,0 +1,2 @@
+{"role": "user", "content": "; cat /etc/passwd", "message_id": "msg_f647d7054a8f", "timestamp": "2025-08-05T21:58:28.033333", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "FF Chat (basic_chat) response to: ; cat /etc/passwd", "message_id": "msg_97c745e90508", "timestamp": "2025-08-05T21:58:28.036645", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "basic_chat"}}

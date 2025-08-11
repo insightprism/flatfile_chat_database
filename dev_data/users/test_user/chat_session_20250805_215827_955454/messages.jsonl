@@ -1,0 +1,2 @@
+{"role": "user", "content": "'; DROP TABLE users; --", "message_id": "msg_9d163a0b1951", "timestamp": "2025-08-05T21:58:27.958841", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "FF Chat (basic_chat) response to: '; DROP TABLE users; --", "message_id": "msg_ccf2a730f2ee", "timestamp": "2025-08-05T21:58:27.961601", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "basic_chat"}}

@@ -1,0 +1,1 @@
+{"role": "user", "content": "Hello! This is a test message for Flatfile adapter.", "message_id": "msg_flatfile_test_001", "timestamp": "2024-01-01T12:00:00Z", "attachments": [], "metadata": {"test": "flatfile_adapter", "chat_optimized": true, "stored_via_bridge": true, "processing_time": 1.1444091796875e-05}}

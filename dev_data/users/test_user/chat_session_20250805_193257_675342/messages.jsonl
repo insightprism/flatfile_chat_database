@@ -1,0 +1,2 @@
+{"role": "user", "content": "Hello", "message_id": "msg_c33431323114", "timestamp": "2025-08-05T19:32:57.678656", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "FF Chat (basic_chat) response to: Hello", "message_id": "msg_715f7404fe04", "timestamp": "2025-08-05T19:32:57.682536", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "basic_chat"}}

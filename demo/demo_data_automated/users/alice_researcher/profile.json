@@ -1,0 +1,20 @@
+{
+  "created_at": "2025-08-05T21:57:18.829637",
+  "metadata": {
+    "department": "Machine Learning Lab",
+    "expertise": [
+      "deep_learning",
+      "nlp",
+      "computer_vision"
+    ],
+    "institution": "Tech University",
+    "role": "AI Researcher"
+  },
+  "preferences": {
+    "language": "en",
+    "theme": "dark"
+  },
+  "updated_at": "2025-08-05T21:57:18.829643",
+  "user_id": "alice_researcher",
+  "username": "Dr. Alice Johnson"
+}

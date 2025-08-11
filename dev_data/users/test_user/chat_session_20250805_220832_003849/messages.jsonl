@@ -1,0 +1,2 @@
+{"role": "user", "content": "Test message for memory_chat", "message_id": "msg_c28618f8ded3", "timestamp": "2025-08-05T22:08:32.006530", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "Phase 2 processing for memory_chat would use components: text_chat, memory [Memory context would be retrieved and applied]", "message_id": "msg_76659a5bc4e8", "timestamp": "2025-08-05T22:08:32.009166", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "memory_chat"}}

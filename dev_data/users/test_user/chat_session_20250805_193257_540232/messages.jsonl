@@ -1,0 +1,2 @@
+{"role": "user", "content": "This is a test message for multi_ai_panel", "message_id": "msg_e8c6d04ddb69", "timestamp": "2025-08-05T19:32:57.543866", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "Fallback response to: This is a test message for multi_ai_panel", "message_id": "msg_25bb19301254", "timestamp": "2025-08-05T19:32:57.546568", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "multi_ai_panel"}}

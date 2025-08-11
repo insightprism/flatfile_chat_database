@@ -1,0 +1,20 @@
+{
+  "created_at": "2025-08-05T21:57:18.832461",
+  "metadata": {
+    "company": "DataTech Corp",
+    "department": "Engineering",
+    "expertise": [
+      "python",
+      "databases",
+      "api_design"
+    ],
+    "role": "Senior Developer"
+  },
+  "preferences": {
+    "language": "en",
+    "theme": "light"
+  },
+  "updated_at": "2025-08-05T21:57:18.832463",
+  "user_id": "bob_developer",
+  "username": "Bob Smith"
+}

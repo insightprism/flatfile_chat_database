@@ -1,0 +1,2 @@
+{"role": "user", "content": "This is a test message for multimodal_chat", "message_id": "msg_02aaaf059e67", "timestamp": "2025-08-05T19:34:17.332877", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "FF Chat (multimodal_chat) response to: This is a test message for multimodal_chat", "message_id": "msg_5309b21a792e", "timestamp": "2025-08-05T19:34:17.335514", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "multimodal_chat"}}

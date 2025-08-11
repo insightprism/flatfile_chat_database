@@ -1,0 +1,2 @@
+{"role": "user", "content": "This is a test message for translation_chat use case", "message_id": "msg_a73eaab9de94", "timestamp": "2025-08-05T22:08:31.406150", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "Fallback response to: This is a test message for translation_chat use case", "message_id": "msg_bd81131950b5", "timestamp": "2025-08-05T22:08:31.408901", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "translation_chat"}}

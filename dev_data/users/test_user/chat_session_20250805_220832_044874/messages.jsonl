@@ -1,0 +1,2 @@
+{"role": "user", "content": "Test message for personal_assistant", "message_id": "msg_d047d2716f84", "timestamp": "2025-08-05T22:08:32.047953", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "Fallback response to: Test message for personal_assistant", "message_id": "msg_f43b6fe03a1b", "timestamp": "2025-08-05T22:08:32.051142", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "personal_assistant"}}

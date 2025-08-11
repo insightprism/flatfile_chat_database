@@ -1,0 +1,46 @@
+# FF Chat API Development Docker Image
+# Optimized for development with hot reloading and debugging
+
+FROM python:3.11-slim
+
+# Set development environment
+ENV PYTHONPATH=/app \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    FF_ENV=development \
+    FF_LOG_LEVEL=DEBUG
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    git \
+    curl \
+    vim \
+    htop \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directories
+RUN mkdir -p /app /app/data /app/logs
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install dependencies
+COPY requirements.txt requirements-dev.txt ./
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt && \
+    pip install -r requirements-dev.txt
+
+# Install development tools
+RUN pip install watchdog uvicorn[standard] pytest-xvs black isort mypy
+
+# Create data directories
+RUN mkdir -p /app/data/storage /app/data/vector /app/data/search /app/logs
+
+# Expose ports
+EXPOSE 8000 8001 5555
+
+# Development startup with hot reloading
+CMD ["uvicorn", "ff_chat_api:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "debug"]

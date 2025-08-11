@@ -1,0 +1,20 @@
+{
+  "created_at": "2025-08-05T21:57:18.833730",
+  "metadata": {
+    "company": "Analytics Inc",
+    "department": "Analytics",
+    "expertise": [
+      "statistics",
+      "visualization",
+      "sql"
+    ],
+    "role": "Data Analyst"
+  },
+  "preferences": {
+    "language": "en",
+    "theme": "auto"
+  },
+  "updated_at": "2025-08-05T21:57:18.833732",
+  "user_id": "carol_analyst",
+  "username": "Carol Williams"
+}

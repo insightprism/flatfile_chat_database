@@ -453,7 +453,7 @@ class FFStorageManager:
         
         # List all session directories
         # Use just the filename for recursive search
-        pattern = self.config.session_metadata_filename
+        pattern = self.config.storage.session_metadata_filename
         session_keys = await self.backend.list_keys(user_key, pattern=pattern)
         
         # Sort by session ID (which includes timestamp)

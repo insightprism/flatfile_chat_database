@@ -1,0 +1,2 @@
+{"role": "user", "content": "<script>alert('xss')</script>", "message_id": "msg_4b71743ef807", "timestamp": "2025-08-05T19:34:19.548961", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "FF Chat (basic_chat) response to: <script>alert('xss')</script>", "message_id": "msg_c992e71f923e", "timestamp": "2025-08-05T19:34:19.552834", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "basic_chat"}}

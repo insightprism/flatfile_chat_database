@@ -1,0 +1,70 @@
+# FF Chat API Development Docker Compose
+# Lightweight development environment with hot reloading
+
+version: '3.8'
+
+services:
+  # Development FF Chat API service
+  ff-chat-api-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    container_name: ff-chat-api-dev
+    restart: unless-stopped
+    environment:
+      - FF_ENV=development
+      - FF_LOG_LEVEL=DEBUG
+      - FF_STORAGE_BASE_PATH=/app/data/storage
+      - FF_API_HOST=0.0.0.0
+      - FF_API_PORT=8000
+      - FF_ENABLE_CORS=true
+      - FF_ENABLE_AUTH=false
+      - FF_RATE_LIMIT_PER_MINUTE=1000
+    ports:
+      - "8000:8000"
+      - "8001:8001"  # WebSocket port
+    volumes:
+      - ..:/app:cached
+      - dev_data:/app/data
+      - dev_logs:/app/logs
+    networks:
+      - ff-chat-dev-network
+    depends_on:
+      - redis-dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis for development
+  redis-dev:
+    image: redis:7-alpine
+    container_name: ff-chat-redis-dev
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    networks:
+      - ff-chat-dev-network
+
+  # Development database browser (optional)
+  adminer:
+    image: adminer:latest
+    container_name: ff-chat-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - ff-chat-dev-network
+
+volumes:
+  dev_data:
+    driver: local
+  dev_logs:
+    driver: local
+
+networks:
+  ff-chat-dev-network:
+    driver: bridge

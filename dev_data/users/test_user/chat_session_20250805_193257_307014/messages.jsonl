@@ -1,0 +1,4 @@
+{"role": "user", "content": "Test message 1", "message_id": "msg_e5cc5e49bd29", "timestamp": "2025-08-05T19:32:57.310965", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "FF Chat (basic_chat) response to: Test message 1", "message_id": "msg_e14739798ab2", "timestamp": "2025-08-05T19:32:57.313700", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "basic_chat"}}
+{"role": "user", "content": "Test message 2", "message_id": "msg_3d52ad74c9e7", "timestamp": "2025-08-05T19:32:57.317695", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "FF Chat (basic_chat) response to: Test message 2", "message_id": "msg_b4719e6b7524", "timestamp": "2025-08-05T19:32:57.321749", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "basic_chat"}}

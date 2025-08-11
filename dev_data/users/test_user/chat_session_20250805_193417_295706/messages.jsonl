@@ -1,0 +1,2 @@
+{"role": "user", "content": "This is a test message for rag_chat", "message_id": "msg_e67d6a72fccc", "timestamp": "2025-08-05T19:34:17.299013", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "Phase 2 processing for rag_chat would use components: text_chat, memory, search", "message_id": "msg_570ddb1ace96", "timestamp": "2025-08-05T19:34:17.302075", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "rag_chat"}}

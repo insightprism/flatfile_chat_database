@@ -1,0 +1,4 @@
+{"role": "user", "content": "I love Python programming", "message_id": "msg_205785f386fe", "timestamp": "2025-08-05T19:34:17.188681", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "FF Chat (basic_chat) response to: I love Python programming", "message_id": "msg_ff57c5a562c2", "timestamp": "2025-08-05T19:34:17.192111", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "basic_chat"}}
+{"role": "user", "content": "JavaScript is also great", "message_id": "msg_ed58d7d44c84", "timestamp": "2025-08-05T19:34:17.195520", "attachments": [], "metadata": {}}
+{"role": "assistant", "content": "FF Chat (basic_chat) response to: JavaScript is also great", "message_id": "msg_1257e8c4ae88", "timestamp": "2025-08-05T19:34:17.198409", "attachments": [], "metadata": {"processor": "ff_chat_phase2_components", "components_used": ["fallback"], "use_case": "basic_chat"}}
