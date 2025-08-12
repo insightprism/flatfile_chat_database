@@ -52,12 +52,13 @@ def ff_sanitize_filename(filename: str, max_length: int = 255) -> str:
     return filename
 
 
-def ff_generate_session_id(config: FFConfigurationManagerConfigDTO) -> str:
+def ff_generate_session_id(config: FFConfigurationManagerConfigDTO, session_type: str = "chat") -> str:
     """
     Generate unique session ID using configured format.
     
     Args:
         config: Storage configuration
+        session_type: Type of session (chat, panel, debate, problem_solving)
         
     Returns:
         Session ID like "chat_session_20240722_143022_123456"
@@ -65,7 +66,11 @@ def ff_generate_session_id(config: FFConfigurationManagerConfigDTO) -> str:
     timestamp = datetime.now().strftime(config.storage.session_timestamp_format)
     # Add microseconds to ensure uniqueness
     microseconds = datetime.now().strftime("%f")[:6]
-    return f"{config.storage.session_id_prefix}_{timestamp}_{microseconds}"
+    
+    # Get the prefix for the session type
+    prefix = config.storage.get_session_prefix(session_type)
+    
+    return f"{prefix}_{timestamp}_{microseconds}"
 
 
 def ff_generate_panel_id(config: FFConfigurationManagerConfigDTO) -> str:
@@ -327,6 +332,30 @@ def is_valid_panel_id(panel_id: str, config: FFConfigurationManagerConfigDTO) ->
     """
     pattern = f"^{re.escape(config.panel_id_prefix)}_\\d{{8}}_\\d{{6}}$"
     return bool(re.match(pattern, panel_id))
+
+
+def detect_session_type(session_id: str, config: FFConfigurationManagerConfigDTO) -> str:
+    """
+    Detect the session type from a session ID.
+    
+    Args:
+        session_id: Session identifier to analyze
+        config: Storage configuration
+        
+    Returns:
+        Session type (chat, panel, debate, problem_solving) or "chat" as default
+    """
+    # Check each configured session type
+    for session_type, prefix in config.storage.session_types.items():
+        if session_id.startswith(prefix):
+            return session_type
+    
+    # Legacy support for old panel format
+    if session_id.startswith("panel_"):
+        return "panel"
+    
+    # Default to chat type
+    return "chat"
 
 
 # Centralized key generation functions for backend storage

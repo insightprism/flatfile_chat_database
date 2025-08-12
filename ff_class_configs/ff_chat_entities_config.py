@@ -103,6 +103,7 @@ class FFSessionDTO:
     session_id: str
     user_id: str
     title: str = "New Chat"
+    session_type: str = "chat"  # Type of session (chat, panel, debate, problem_solving)
     created_at: str = field(default_factory=current_timestamp)
     updated_at: str = field(default_factory=current_timestamp)
     message_count: int = 0

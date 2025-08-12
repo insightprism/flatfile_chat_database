@@ -24,8 +24,16 @@ class FFStorageConfigDTO(FFBaseConfigDTO):
     system_config_directory: str = "system"
     
     # File naming patterns
-    session_id_prefix: str = "chat_session"
+    session_id_prefix: str = "chat_session"  # Default/legacy prefix
     session_timestamp_format: str = "%Y%m%d_%H%M%S"
+    
+    # Session type configuration
+    session_types: dict = field(default_factory=lambda: {
+        "chat": "chat_session",
+        "panel": "panel_session",
+        "debate": "debate_session",
+        "problem_solving": "problem_solving_session"
+    })
     
     # Core file names
     profile_filename: str = "profile.json"
@@ -53,6 +61,18 @@ class FFStorageConfigDTO(FFBaseConfigDTO):
     # ID generation settings
     message_id_length: int = 12
     temp_file_suffix_length: int = 8
+    
+    def get_session_prefix(self, session_type: str = "chat") -> str:
+        """
+        Get the session ID prefix for a given session type.
+        
+        Args:
+            session_type: Type of session (chat, panel, debate, problem_solving)
+            
+        Returns:
+            Session ID prefix string
+        """
+        return self.session_types.get(session_type, self.session_id_prefix)
     
     def validate(self) -> List[str]:
         """

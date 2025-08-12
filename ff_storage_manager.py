@@ -330,29 +330,53 @@ class FFStorageManager:
     
     # === Session Management ===
     
-    async def create_session(self, user_id: str, title: Optional[str] = None) -> str:
+    async def create_session(self, user_id: str, title: Optional[str] = None, session_type: str = "chat") -> str:
         """
         Create new chat session.
         
         Args:
             user_id: User identifier
             title: Optional session title
+            session_type: Type of session (chat, panel, debate, problem_solving)
             
         Returns:
             Session ID
         """
+        # Validate and get proper user (reject personas)
+        from ff_user_context_manager import get_user_context
+        user_context = get_user_context()
+        validated_user_id = user_context.validate_and_get_user(user_id)
+        
+        # Log if user was changed
+        if validated_user_id != user_id:
+            self.logger.info(f"User ID '{user_id}' was invalid (likely a persona), using '{validated_user_id}' instead")
+        
+        # Use the validated user ID
+        user_id = validated_user_id
+        
         # Ensure user exists
         if not await self.user_exists(user_id):
             await self.create_user(user_id)
         
-        # Generate session ID
-        session_id = ff_generate_session_id(self.config)
+        # Generate session ID based on type
+        session_id = ff_generate_session_id(self.config, session_type)
+        
+        # Set appropriate title based on session type
+        if not title:
+            title_map = {
+                "chat": "New Chat",
+                "panel": "Panel Session",
+                "debate": "Debate Session",
+                "problem_solving": "Problem Solving Session"
+            }
+            title = title_map.get(session_type, "New Session")
         
         # Create session object
         session = FFSessionDTO(
             session_id=session_id,
             user_id=user_id,
-            title=title or "New Chat"
+            title=title,
+            session_type=session_type
         )
         
         # Save session metadata
@@ -503,6 +527,18 @@ class FFStorageManager:
         Returns:
             True if successful
         """
+        # Validate and get proper user (reject personas)
+        from ff_user_context_manager import get_user_context
+        user_context = get_user_context()
+        validated_user_id = user_context.validate_and_get_user(user_id)
+        
+        # Log if user was changed
+        if validated_user_id != user_id:
+            self.logger.info(f"User ID '{user_id}' was invalid (likely a persona), using '{validated_user_id}' instead")
+        
+        # Use the validated user ID
+        user_id = validated_user_id
+        
         # Check message size
         message_json = message.to_dict()
         message_size = len(str(message_json).encode('utf-8'))

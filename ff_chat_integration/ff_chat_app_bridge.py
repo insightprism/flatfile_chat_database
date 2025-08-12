@@ -855,6 +855,48 @@ class FFChatAppBridge:
         
         return self._data_layer
     
+    def get_current_user(self) -> str:
+        """
+        Get the current authenticated user.
+        
+        This method returns the authoritative user identification from the
+        flatfile database. The chat application should call this to know
+        who the current user is, rather than attempting to specify users.
+        
+        Returns:
+            The authenticated user identifier (e.g., "test123", "markly2")
+            
+        Example:
+            # Chat app requests current user from flatfile
+            user_id = bridge.get_current_user()
+            print(f"Current user: {user_id}")  # Output: "Current user: test123"
+        """
+        from ff_user_context_manager import get_current_user
+        return get_current_user()
+    
+    def get_user_info(self) -> Dict[str, Any]:
+        """
+        Get detailed information about the current user.
+        
+        Returns:
+            Dictionary containing user information including:
+            - user_id: The user identifier
+            - is_default: Whether using default user
+            - is_authenticated: Whether properly authenticated
+            - authentication_method: How user was determined
+            
+        Example:
+            user_info = bridge.get_user_info()
+            # {
+            #     "user_id": "test123",
+            #     "is_default": True,
+            #     "is_authenticated": False,
+            #     "authentication_method": "default"
+            # }
+        """
+        from ff_user_context_manager import get_user_context
+        return get_user_context().get_user_info()
+    
     async def close(self) -> None:
         """Clean shutdown of all resources."""
         try:
